@@ -57,8 +57,8 @@ app.get('/index', async (req, res) => {
         res.render('index', { 
             user: req.session.user, 
             id: req.session.user.id, // เปลี่ยนจาก req.session.id เป็น req.session.user.id
-            activeCode: activeCode,
-            activeExpiration: activeExpiration
+            activeCode: activeCode || null, // กำหนดค่าเริ่มต้น
+            activeExpiration: activeExpiration || null // กำหนดค่าเริ่มต้น
         });
     } catch (error) {
         console.error('เกิดข้อผิดพลาดในการดึงข้อมูล:', error);
