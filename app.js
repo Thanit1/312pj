@@ -134,7 +134,7 @@ app.post('/resgister', async (req, res) => {
             from: 'thanit.sn02@gmail.com',
             to: email,
             subject: 'ยืนยันการสมัครสมาชิก',
-            text: `ขอบคุณที่สมัครสมาชิก กรุณายืนยันอีเมลของคุณโดยคลิกที่ลิงก์นี้: http://172.25.11.144:3000/verify-email?token=${token}`
+            text: `ขอบคุณที่สมัครสมาชิก กรุณายืนยันอีเมลของคุณโดยคลิกที่ลิงก์นี้: http://172.25.11.151:5900/verify-email?token=${token}`
         };
 
         transporter.sendMail(mailOptions, (error, info) => {
