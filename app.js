@@ -7,7 +7,7 @@ const exceljs = require('exceljs');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
 const app = express();
-const port = 3000;
+const port = 5900;
 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -36,7 +36,6 @@ function islogin(req, res, next) {
     next();
 }
 app.get('/index', async (req, res) => {
-    console.log('Accessing /index. Session:', req.session);
     if (!req.session.user) {
         return res.redirect('/login');
     }
