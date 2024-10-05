@@ -239,11 +239,15 @@ app.post('/room', isnotlogin, async (req, res) => {
             }
         }
 
-        const currentTime = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
-        const expirationTime = new Date(currentTime.getTime() + 30 * 60 * 1000); // 30 นาที
+        const currentTime = new Date(); // เก็บเป็น UTC
+
+        // แปลงเวลาปัจจุบันเป็นเวลาท้องถิ่นของไทย
+        const thaiCurrentTime = new Date(currentTime.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+
+        const expirationTime = new Date(thaiCurrentTime.getTime() + 30 * 60 * 1000); // 30 นาที
         
         const query = 'INSERT INTO room_requests (user_id, request_time, access_code, expiration_time) VALUES ($1, $2, $3, $4)';
-        const result = await dbConnection.query(query, [userId, currentTime, randomCode, expirationTime]);
+        const result = await dbConnection.query(query, [userId, thaiCurrentTime, randomCode, expirationTime]);
         
         if (result.rowCount > 0) { // ตรวจสอบว่าการแอดสำเร็จหรือไม่
             const thaiExpirationTime = expirationTime.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
