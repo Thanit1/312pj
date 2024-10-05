@@ -236,8 +236,8 @@ app.post('/room', isnotlogin, async (req, res) => {
             }
         }
 
-        const currentTime = new Date();
-        const expirationTime = new Date(currentTime.getTime() + 30 * 60 * 1000); // 30 นาที
+        const currentTime = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+        const expirationTime = new Date(currentTime.getTime() + 30 * 60 * 1000).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }); // 30 นาที
         
         const query = 'INSERT INTO room_requests (user_id, request_time, access_code, expiration_time) VALUES ($1, $2, $3, $4)';
         await dbConnection.query(query, [userId, currentTime, randomCode, expirationTime]);
