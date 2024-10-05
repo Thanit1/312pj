@@ -5,10 +5,11 @@ const dbConnection = require('./db');
 const session = require('express-session');
 const exceljs = require('exceljs');
 const fs = require('fs');
+const crypto = require('crypto'); // เพิ่มการนำเข้า crypto
 const bcrypt = require('bcryptjs');
 const app = express();
 const port = 3000;
-
+const nodemailer = require('nodemailer'); // เพิ่มการนำเข้า nodemailer
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
@@ -113,15 +114,57 @@ app.post('/resgister', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, saltRounds);
         
         // ถ้า number ถูกต้องและไม่ซ้ำ ดำเนินการบันทึกข้อมูล
-        const insertQuery = 'INSERT INTO users (number, firstname, lastname, email, password) VALUES ($1, $2, $3, $4, $5)';
-        const values = [number, firstname, lastname, email, hashedPassword];
-        
+        const token = crypto.randomBytes(20).toString('hex');
+
+        // บันทึก token ในฐานข้อมูลพร้อมกับข้อมูลผู้ใช้
+        const insertQuery = 'INSERT INTO users (number, firstname, lastname, email, password, verification_token) VALUES ($1, $2, $3, $4, $5, $6)';
+        const values = [number, firstname, lastname, email, hashedPassword, token];
         await dbConnection.query(insertQuery, values);
-        res.render('login', { success: 'สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ' });
+        
+        // ส่งอีเมลยืนยัน
+        const transporter = nodemailer.createTransport({
+            service: 'gmail', // หรือบริการอีเมลที่คุณใช้
+            auth: {
+                user: 'thanit.sn02@gmail.com', // อีเมลของคุณ
+                pass: 'ogxi yywv crlg ezzr' // รหัสผ่านของอีเมล
+            }
+        });
+
+        const mailOptions = {
+            from: 'thanit.sn02@gmail.com',
+            to: email,
+            subject: 'ยืนยันการสมัครสมาชิก',
+            text: `ขอบคุณที่สมัครสมาชิก กรุณายืนยันอีเมลของคุณโดยคลิกที่ลิงก์นี้: http://172.25.11.144:3000/verify-email?token=${token}`
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                return console.log('เกิดข้อผิดพลาดในการส่งอีเมล:', error);
+            }
+            console.log('อีเมลถูกส่ง:', info.response);
+        });
+
+        res.render('login', { success: 'สมัครสมาชิกสำเร็จ กรุณายืนยันอีเมลของคุณ' });
     } catch (error) {
         console.error('เกิดข้อผิดพลาดในการสมัครสมาชิก:', error);
         res.render('resgister', { error: 'เกิดข้อผิดพลาดในการสมัครสมาชิก' });
     }
+});
+
+app.get('/verify-email', async (req, res) => {
+    const token = req.query.token;
+
+    // ตรวจสอบ token และอัปเดตสถานะการยืนยันในฐานข้อมูล
+    const updateQuery = 'UPDATE users SET is_verified = TRUE WHERE verification_token = $1';
+    const result = await dbConnection.query(updateQuery, [token]);
+
+    if (result.rowCount > 0) {
+        
+        res.render('login', { success: 'อีเมลของคุณได้รับการยืนยันแล้ว.....' });
+    } else {
+        res.send('เกิดข้อผิดพลาดในการยืนยันอีเมล');
+    }
+    
 });
 app.get('/login', islogin, (req, res) => {
     res.render('login', { error: null, success: null });
@@ -136,13 +179,16 @@ app.post('/login', async (req, res) => {
             return res.render('login', { error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', success: null });
         }
         const user = result.rows[0];
+        if (!user.is_verified) { // ตรวจสอบสถานะการยืนยันอีเมล
+            return res.render('login', { error: 'กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ', success: null });
+        }
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.render('login', { error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', success: null });
         }
         req.session.user = user;
         req.session.id = user.number;
-        console.log('Login successful. Session:', req.session); // เพิ่ม log
+        console.log('Login successful. Session:', req.session);
         return res.redirect('/index');
     } catch (err) {
         console.error('เกิดข้อผิดพลาดในการตรวจสอบข้อมูลผู้ใช้:', err);
@@ -234,6 +280,7 @@ app.post('/verify-code', async (req, res) => {
         res.status(500).json({ error: 'เกิดข้อผิดพลาดในการตรวจสอบรหัส' });
     }
 });
+
 app.get('/all-code', async (req, res) => {
     try {
         // ตรวจสอบรหัสในฐานข้อมูล
