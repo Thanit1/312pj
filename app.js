@@ -5,7 +5,7 @@ const dbConnection = require('./db');
 const session = require('express-session');
 const exceljs = require('exceljs');
 const fs = require('fs');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const app = express();
 const port = 5900;
 
