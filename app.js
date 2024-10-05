@@ -7,7 +7,7 @@ const exceljs = require('exceljs');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const app = express();
-const port = 5900;
+const port = 3000;
 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -50,7 +50,7 @@ app.get('/index', async (req, res) => {
         let activeExpiration = null;
         if (result.rows.length > 0) {
             activeCode = result.rows[0].access_code;
-            activeExpiration = result.rows[0].expiration_time.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+            activeExpiration = result.rows[0].expiration_time;
         }
         
         res.render('index', { 
@@ -162,7 +162,7 @@ app.post('/room', isnotlogin, async (req, res) => {
         if (checkResult.rows.length > 0) {
             // ถ้ามีรหัสที่ยังไม่หมดอายุ ส่งกลับรหัสเดิมและเวลาหมดอายุ
             const existingRequest = checkResult.rows[0];
-            const thaiExpirationTime = existingRequest.expiration_time.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+            const thaiExpirationTime = existingRequest.expiration_time;
             return res.render('index', { 
                 user: req.session.user,
                 id: userId,
@@ -196,7 +196,7 @@ app.post('/room', isnotlogin, async (req, res) => {
         const query = 'INSERT INTO room_requests (user_id, request_time, access_code, expiration_time) VALUES ($1, $2, $3, $4)';
         await dbConnection.query(query, [userId, currentTime, randomCode, expirationTime]);
         
-        const thaiExpirationTime = expirationTime.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+        const thaiExpirationTime = expirationTime;
         res.render('index', { 
             user: req.session.user,
             id: userId,
