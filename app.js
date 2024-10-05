@@ -53,7 +53,7 @@ app.get('/index', async (req, res) => {
 
         if (result.rows.length > 0) {
             activeCode = result.rows[0].access_code;
-            activeExpiration = result.rows[0].expiration_time.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+            activeExpiration = result.rows[0].expiration_time;
         }
         
         // ส่งค่าทั้งหมดไปยังเทมเพลต
