@@ -211,7 +211,7 @@ app.post('/room', isnotlogin, async (req, res) => {
         if (checkResult.rows.length > 0) {
             // ถ้ามีรหัสที่ยังไม่หมดอายุ ส่งกลับรหัสเดิมและเวลาหมดอายุ
             const existingRequest = checkResult.rows[0];
-            const thaiExpirationTime = existingRequest.expiration_time.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+            const thaiExpirationTime = existingRequest.expiration_time;
             return res.render('index', { 
                 user: req.session.user,
                 id: userId,
