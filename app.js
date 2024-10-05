@@ -47,18 +47,21 @@ app.get('/index', async (req, res) => {
         const query = 'SELECT access_code, expiration_time FROM room_requests WHERE user_id = $1 AND expiration_time > $2 ORDER BY expiration_time DESC LIMIT 1';
         const result = await dbConnection.query(query, [req.session.user.number, currentTime]);
         
+        // กำหนดค่าเริ่มต้นให้กับ activeCode และ activeExpiration
         let activeCode = null;
         let activeExpiration = null;
+
         if (result.rows.length > 0) {
             activeCode = result.rows[0].access_code;
             activeExpiration = result.rows[0].expiration_time.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
         }
         
+        // ส่งค่าทั้งหมดไปยังเทมเพลต
         res.render('index', { 
             user: req.session.user, 
             id: req.session.user.id, // เปลี่ยนจาก req.session.id เป็น req.session.user.id
-            activeCode: activeCode || null, // กำหนดค่าเริ่มต้น
-            activeExpiration: activeExpiration || null // กำหนดค่าเริ่มต้น
+            activeCode: activeCode, // ส่ง activeCode
+            activeExpiration: activeExpiration // ส่ง activeExpiration
         });
     } catch (error) {
         console.error('เกิดข้อผิดพลาดในการดึงข้อมูล:', error);
@@ -240,16 +243,24 @@ app.post('/room', isnotlogin, async (req, res) => {
         const expirationTime = new Date(currentTime.getTime() + 30 * 60 * 1000); // 30 นาที
         
         const query = 'INSERT INTO room_requests (user_id, request_time, access_code, expiration_time) VALUES ($1, $2, $3, $4)';
-        await dbConnection.query(query, [userId, currentTime, randomCode, expirationTime]);
+        const result = await dbConnection.query(query, [userId, currentTime, randomCode, expirationTime]);
         
-        const thaiExpirationTime = expirationTime.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
-        res.render('index', { 
-            user: req.session.user,
-            id: userId,
-            activeCode: randomCode, 
-            activeExpiration: thaiExpirationTime,
-            message: 'รหัสใหม่ถูกสร้างขึ้นและสามารถใช้ได้ 30 นาที'
-        });
+        if (result.rowCount > 0) { // ตรวจสอบว่าการแอดสำเร็จหรือไม่
+            const thaiExpirationTime = expirationTime.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+            res.render('index', { 
+                user: req.session.user,
+                id: userId,
+                activeCode: randomCode, 
+                activeExpiration: thaiExpirationTime,
+                message: 'รหัสใหม่ถูกสร้างขึ้นและสามารถใช้ได้ 30 นาที'
+            });
+        } else {
+            res.render('index', { 
+                user: req.session.user,
+                id: userId,
+                error: 'เกิดข้อผิดพลาดในการสร้างรหัสใหม่' // แสดงข้อความผิดพลาดถ้าแอดไม่สำเร็จ
+            });
+        }
     } catch (err) {
         console.error('เกิดข้อผิดพลาดในการบันทึกข้อมูลการขอใช้ห้อง:', err);
         res.render('index', { error: 'เกิดข้อผิดพลาดในการบันทึกข้อมูลการขอใช้ห้อง', user: req.session.user, id: userId });
