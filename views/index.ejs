@@ -39,28 +39,12 @@
             <div class="card-body">
                 <h2 class="mb-3 text-center text-primary fs-4">ยินดีต้อนรับ: <%= user.firstname %></h2>
                 <h1 class="mb-3 text-center text-success fs-3">การขอเข้าใช้ห้อง 312</h1>
-                <!-- <div class="alert alert-info py-2 text-center">
-                    <p class="mb-0 small">จำนวณคนในห้อง: <span id="roomOccupantsCount" class="fw-bold"> </span></p>
-                </div> -->
-                <script>
-                    function updateRoomOccupants() {
-                        fetch('/api/room-occupants')
-                            .then(response => response.json())
-                            .then(data => {
-                                document.getElementById('roomOccupantsCount').innerText = data.count;
-                            })
-                            .catch(error => console.error('Error fetching room occupants:', error));
-                    }
-            
-                    updateRoomOccupants();
-                    setInterval(updateRoomOccupants, 30000);
-                </script>
-                <p class="mb-3 text-center text-muted fst-italic small">รหัสจะใช้ได้เพียง 30 นาที</p>
-                <% if (activeCode && activeExpiration) { %>
+                <p class="mb-3 text-center text-muted fst-italic small">รหัสสามารถใช้ได้เพียงครั้งเดียว</p>
+                <% if (typeof activeCode !== 'undefined' && activeCode) { %>
                     <div class="alert alert-success text-center py-2" role="alert">
                         <h4 class="alert-heading fs-5">รหัสการเข้าใช้ห้องของคุณคือ:</h4>
                         <p class="display-6 mb-0"><strong><%= activeCode %></strong></p>
-                        <p class="mt-2 small">รหัสนี้จะหมดอายุเมื่อ: <span class="text-danger"><%= activeExpiration %></span></p>
+                        <p class="mt-2 small">รหัสนี้สามารถใช้ได้เพียงครั้งเดียว</p>
                     </div>
                 <% } else { %>
                     <div class="alert alert-warning text-center py-2" role="alert">
@@ -71,7 +55,7 @@
                     <h4 class="mb-2 text-secondary fs-5">ขอรหัสการเข้าใช้ห้อง</h4>
                     <button type="submit" class="btn btn-primary">ยืนยัน</button>
                 </form>
-                <% if (typeof message !== 'undefined') { %>
+                <% if (typeof message !== 'undefined' && message) { %>
                     <div class="alert alert-info text-center py-2" role="alert">
                         <small><%= message %></small>
                     </div>

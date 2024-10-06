@@ -5,7 +5,7 @@ const dbConnection = require('./db');
 const session = require('express-session');
 const exceljs = require('exceljs');
 const fs = require('fs');
-const crypto = require('crypto'); // เพิ่มการนำเข้า crypto
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const app = express();
 const port = 3000;
@@ -39,71 +39,55 @@ app.get('/index', async (req, res) => {
     }
     
     try {
-        const currentTime = new Date();
-        // แปลงเวลาปัจจุบันเป็นเวลาท้องถิ่นของไทย
-        const thaiCurrentTime = new Date(currentTime.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-        const query = 'SELECT access_code, expiration_time FROM room_requests WHERE user_id = $1 AND expiration_time > $2 ORDER BY expiration_time DESC LIMIT 1';
-        const result = await dbConnection.query(query, [req.session.user.number, currentTime]);
+        const query = 'SELECT access_code FROM room_requests WHERE user_id = $1 AND is_used = FALSE ORDER BY request_time DESC LIMIT 1';
+        const result = await dbConnection.query(query, [req.session.user.number]);
         
-        // กำหนดค่าเริ่มต้นให้กับ activeCode และ activeExpiration
+        // กำหนดค่าเริ่มต้นให้กับ activeCode
         let activeCode = null;
-        let activeExpiration = null;
 
         if (result.rows.length > 0) {
             activeCode = result.rows[0].access_code;
-            // แปลงเวลาท้องถิ่นของไทยให้แสดงแค่วันและเวลา
-            activeExpiration = new Date(result.rows[0].expiration_time.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-            activeExpiration = activeExpiration.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
         }
         
         // ส่งค่าทั้งหมดไปยังเทมเพลต
         res.render('index', { 
             user: req.session.user, 
-            id: req.session.user.id, // เปลี่ยนจาก req.session.id เป็น req.session.user.id
-            activeCode: activeCode, // ส่ง activeCode
-            activeExpiration: activeExpiration // ส่ง activeExpiration
+            id: req.session.user.id,
+            activeCode: activeCode
         });
     } catch (error) {
         console.error('เกิดข้อผิดพลาดในการดึงข้อมูล:', error);
         res.status(500).send('เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์');
     }
 });
-app.get('/', isnotlogin,  async(req, res) => {
+
+app.get('/', isnotlogin, async (req, res) => {
     if (!req.session.user) {
         return res.redirect('/login');
     }
     
     try {
-        const currentTime = new Date();
-        // แปลงเวลาปัจจุบันเป็นเวลาท้องถิ่นของไทย
-        const thaiCurrentTime = new Date(currentTime.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-        const query = 'SELECT access_code, expiration_time FROM room_requests WHERE user_id = $1 AND expiration_time > $2 ORDER BY expiration_time DESC LIMIT 1';
-        const result = await dbConnection.query(query, [req.session.user.number, currentTime]);
+        const query = 'SELECT access_code FROM room_requests WHERE user_id = $1 AND is_used = FALSE ORDER BY request_time DESC LIMIT 1';
+        const result = await dbConnection.query(query, [req.session.user.number]);
         
-        // กำหนดค่าเริ่มต้นให้กับ activeCode และ activeExpiration
+        // กำหนดค่าเริ่มต้นให้กับ activeCode
         let activeCode = null;
-        let activeExpiration = null;
 
         if (result.rows.length > 0) {
             activeCode = result.rows[0].access_code;
-            // แปลงเวลาท้องถิ่นของไทยให้แสดงแค่วันและเวลา
-            activeExpiration = new Date(result.rows[0].expiration_time.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-            activeExpiration = activeExpiration.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
         }
         
         // ส่งค่าทั้งหมดไปยังเทมเพลต
         res.render('index', { 
             user: req.session.user, 
-            id: req.session.user.id, // เปลี่ยนจาก req.session.id เป็น req.session.user.id
-            activeCode: activeCode, // ส่ง activeCode
-            activeExpiration: activeExpiration // ส่ง activeExpiration
+            id: req.session.user.id,
+            activeCode: activeCode
         });
     } catch (error) {
         console.error('เกิดข้อผิดพลาดในการดึงข้อมูล:', error);
         res.status(500).send('เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์');
     }
-  });
-
+});
 app.get('/resgister', islogin, (req, res) => {
     res.render('resgister', { error: null, success: null });
 });
@@ -231,29 +215,26 @@ app.post('/login', async (req, res) => {
     }
 });
 // ... existing code ...
-
 app.post('/room', isnotlogin, async (req, res) => {
-    const userId = req.session.user.number; // ใช้ ID จาก session แทนที่จะรับจาก body
+    const userId = req.session.user.number;
 
     try {
-        // ตรวจสอบว่าผู้ใช้มีรหัสที่ยังไม่หมดอายุหรือไม่
-        const checkQuery = 'SELECT * FROM room_requests WHERE user_id = $1 AND expiration_time > NOW()';
-        const checkResult = await dbConnection.query(checkQuery, [userId]);
+        // ตรวจสอบว่ามีรหัสที่ยังไม่ได้ใช้อยู่หรือไม่
+        const checkExistingCodeQuery = 'SELECT access_code FROM room_requests WHERE user_id = $1 AND is_used = FALSE';
+        const existingCodeResult = await dbConnection.query(checkExistingCodeQuery, [userId]);
 
-        if (checkResult.rows.length > 0) {
-            // ถ้ามีรหัสที่ยังไม่หมดอายุ ส่งกลับรหัสเดิมและเวลาหมดอายุ
-            const existingRequest = checkResult.rows[0];
-            const thaiExpirationTime = existingRequest.expiration_time.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        if (existingCodeResult.rows.length > 0) {
+            // มีรหัสที่ยังไม่ได้ใช้อยู่
+            const existingCode = existingCodeResult.rows[0].access_code;
             return res.render('index', { 
                 user: req.session.user,
                 id: userId,
-                activeCode: existingRequest.access_code, 
-                activeExpiration: thaiExpirationTime,
-                message: 'คุณมีรหัสที่ยังไม่หมดอายุ สามารถใช้รหัสนี้ได้จนกว่าจะถึงเวลาหมดอายุ'
+                activeCode: existingCode,
+                message: 'คุณมีรหัสที่ยังไม่ได้ใช้อยู่แล้ว กรุณาใช้รหัสนี้ก่อนที่จะขอรหัสใหม่'
             });
         }
 
-        // สร้างรหัสใหม่
+        // ถ้าไม่มีรหัสที่ยังไม่ได้ใช้ ให้สร้างรหัสใหม่
         const generateRandomCode = () => {
             return Math.floor(100000 + Math.random() * 900000).toString();
         };
@@ -264,62 +245,64 @@ app.post('/room', isnotlogin, async (req, res) => {
         while (!isCodeUnique) {
             randomCode = generateRandomCode();
             // ตรวจสอบว่ารหัสซ้ำหรือไม่
-            const checkCodeQuery = 'SELECT * FROM room_requests WHERE access_code = $1 AND expiration_time > NOW()';
+            const checkCodeQuery = 'SELECT * FROM room_requests WHERE access_code = $1 AND is_used = FALSE';
             const checkCodeResult = await dbConnection.query(checkCodeQuery, [randomCode]);
             if (checkCodeResult.rows.length === 0) {
                 isCodeUnique = true;
             }
         }
 
-        const currentTime = new Date(); // เก็บเป็น UTC
-
-        // แปลงเวลาปัจจุบันเป็นเวลาท้องถิ่นของไทย
+        const currentTime = new Date();
         const thaiCurrentTime = new Date(currentTime.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-
-        const expirationTime = new Date(thaiCurrentTime.getTime() + 30 * 60 * 1000); // 30 นาที
         
-        const query = 'INSERT INTO room_requests (user_id, request_time, access_code, expiration_time) VALUES ($1, $2, $3, $4)';
-        const result = await dbConnection.query(query, [userId, thaiCurrentTime, randomCode, expirationTime]);
+        const query = 'INSERT INTO room_requests (user_id, request_time, access_code, is_used) VALUES ($1, $2, $3, FALSE)';
+        const result = await dbConnection.query(query, [userId, thaiCurrentTime, randomCode]);
         
-        if (result.rowCount > 0) { // ตรวจสอบว่าการแอดสำเร็จหรือไม่
-            const thaiExpirationTime = expirationTime.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+        if (result.rowCount > 0) {
             res.render('index', { 
                 user: req.session.user,
                 id: userId,
                 activeCode: randomCode, 
-                activeExpiration: thaiExpirationTime,
-                message: 'รหัสใหม่ถูกสร้างขึ้นและสามารถใช้ได้ 30 นาที'
+                message: 'รหัสใหม่ถูกสร้างขึ้นและสามารถใช้ได้หนึ่งครั้ง'
             });
         } else {
             res.render('index', { 
                 user: req.session.user,
                 id: userId,
-                error: 'เกิดข้อผิดพลาดในการสร้างรหัสใหม่' // แสดงข้อความผิดพลาดถ้าแอดไม่สำเร็จ
+                activeCode: null,
+                error: 'เกิดข้อผิดพลาดในการสร้างรหัสใหม่'
             });
         }
     } catch (err) {
         console.error('เกิดข้อผิดพลาดในการบันทึกข้อมูลการขอใช้ห้อง:', err);
-        res.render('index', { error: 'เกิดข้อผิดพลาดในการบันทึกข้อมูลการขอใช้ห้อง', user: req.session.user, id: userId });
+        res.render('index', { 
+            error: 'เกิดข้อผิดพลาดในการบันทึกข้อมูลการขอใช้ห้อง', 
+            user: req.session.user, 
+            id: userId,
+            activeCode: null
+        });
     }
 });
 app.post('/verify-code', async (req, res) => {
     const { access_code } = req.body;
-
     try {
-        // ตรวจสอบรหัสในฐานข้อมูล
-        const query = 'SELECT * FROM room_requests WHERE access_code = $1 AND expiration_time > NOW()';
+        const currentTime = new Date();
+        const thaiCurrentTime = new Date(currentTime.toLocaleString('th-th', { timeZone: 'Asia/Bangkok' }));
+        
+        // เพิ่มเงื่อนไข AND is_used = FALSE ในการตรวจสอบรหัส
+        const query = 'SELECT * FROM room_requests WHERE access_code = $1 AND is_used = FALSE';
         const result = await dbConnection.query(query, [access_code]);
 
         if (result.rows.length > 0) {
-            // รหัสถูกต้องและยังไม่หมดอายุ
-            // บันทึกเวลาที่ใช้รหัส
-            const usageTime = new Date();
+            // รหัสถูกต้อง ยังไม่หมดอายุ และยังไม่ถูกใช้
             const insertUsageQuery = 'INSERT INTO code_usage_logs (user_id, access_code, usage_time) VALUES ($1, $2, $3)';
-            await dbConnection.query(insertUsageQuery, [result.rows[0].user_id, access_code, usageTime]);
+            await dbConnection.query(insertUsageQuery, [result.rows[0].user_id, access_code, thaiCurrentTime]);
+
+            const updateQuery = 'UPDATE room_requests SET is_used = TRUE WHERE access_code = $1';
+            await dbConnection.query(updateQuery, [access_code]);
             console.log('บันทึกการใช้รหัสสำเร็จ');
             res.json({ status: 1 });
         } else {
-            // รหัสไม่ถูกต้องหรือหมดอายุแล้ว
             res.json({ status: 0 });
         }
     } catch (err) {
@@ -328,25 +311,22 @@ app.post('/verify-code', async (req, res) => {
     }
 });
 
+// แก้ไข endpoint สำหรับดึงรหัสทั้งหมดที่ยังใช้ได้
 app.get('/all-code', async (req, res) => {
     try {
-        // ตรวจสอบรหัสในฐานข้อมูล
-        const query = 'SELECT access_code FROM room_requests WHERE expiration_time > NOW()';
+        const query = 'SELECT access_code FROM room_requests WHERE expiration_time > NOW() AND is_used = FALSE';
         const result = await dbConnection.query(query);
 
         if (result.rows.length > 0) {
-          
             res.json(result.rows);
         } else {
-          
-            res.status(404).json({ error: 'ไม่พบรหัสที่ยังไม่หมดอายุ' });
+            res.status(404).json({ error: 'ไม่พบรหัสที่ยังไม่หมดอายุและยังไม่ถูกใช้' });
         }
     } catch (err) {
         console.error('เกิดข้อผิดพลาดในการตรวจสอบรหัส:', err);
         res.status(500).json({ error: 'เกิดข้อผิดพลาดในการตรวจสอบรหัส' });
     }
 });
-
 // ... existing code ...
 
 app.get('/reset-password', (req, res) => {
@@ -504,7 +484,7 @@ app.post('/adminregister', async (req, res) => {
 app.get('/adminindex', async (req, res) => {
     try {
         const query = `
-            SELECT r.user_id, r.access_code as code, r.request_time as created_at, r.expiration_time as expires_at,
+            SELECT r.user_id, r.access_code as code, r.request_time as created_at,
             CASE WHEN c.usage_time IS NOT NULL THEN true ELSE false END as is_used,
             c.usage_time as used_at
             FROM room_requests r

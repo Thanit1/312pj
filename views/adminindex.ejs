@@ -48,7 +48,6 @@
                     <th>รหัสผู้ใช้</th>
                     <th>รหัสการใช้งาน</th>
                     <th>เวลาที่สร้าง</th>
-                    <th>เวลาที่หมดอายุ</th>
                     <th>เวลาที่ใช้งาน</th>
                     <th>สถานะ</th>
                 </tr>
@@ -59,7 +58,6 @@
                         <td><%= log.user_id %></td>
                         <td><%= log.code %></td>
                         <td><%= new Date(log.created_at).toLocaleString('th-TH') %></td>
-                        <td><%= new Date(log.expires_at).toLocaleString('th-TH') %></td>
                         <td><%= log.used_at ? new Date(log.used_at).toLocaleString('th-TH') : 'ยังไม่ใช้งาน' %></td>
                         <td><%= log.is_used ? 'ใช้งานแล้ว' : 'ยังไม่ใช้งาน' %></td>
                     </tr>
