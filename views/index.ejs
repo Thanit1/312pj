@@ -3,34 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>index</title>
+    <title>ขอเข้าใช้ห้อง</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .navbar {
+            background-color: white !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        }
+    </style>
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="/index">หน้าแรก</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/index">ขอเข้าใช้ห้อง</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/locker">ขอใช้ตู้เก็บของ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">ออกจากระบบ</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
     <div class="container mt-5">
-        <h2 class="mb-4">ยินดีต้อนรับ: <%= user.firstname %></h2>
-        <h1 class="mb-3">การขอเข้าใช้ห้อง 312</h1>
-        <h2 class="mb-3">เลือกเวลาที่ต้องการเข้าใช้ห้อง</h2>
-        <p class="mb-4">รหัสจะใช้ได้เพียง 30 นาที</p>
-        <% if (activeCode && activeExpiration) { %>
-            <div class="alert alert-success" role="alert">
-                <h4 class="alert-heading">รหัสการเข้าใช้ห้องของคุณคือ:</h4>
-                <p class="mb-0"><strong><%= activeCode %></strong></p>
-                <p>รหัสนี้จะหมดอายุเมื่อ: <%= activeExpiration %></p>
+        <div class="card shadow-sm col-md-8 mx-auto">
+            <div class="card-body">
+                <h2 class="mb-3 text-center text-primary fs-4">ยินดีต้อนรับ: <%= user.firstname %></h2>
+                <h1 class="mb-3 text-center text-success fs-3">การขอเข้าใช้ห้อง 312</h1>
+                <!-- <div class="alert alert-info py-2 text-center">
+                    <p class="mb-0 small">จำนวณคนในห้อง: <span id="roomOccupantsCount" class="fw-bold"> </span></p>
+                </div> -->
+                <script>
+                    function updateRoomOccupants() {
+                        fetch('/api/room-occupants')
+                            .then(response => response.json())
+                            .then(data => {
+                                document.getElementById('roomOccupantsCount').innerText = data.count;
+                            })
+                            .catch(error => console.error('Error fetching room occupants:', error));
+                    }
+            
+                    updateRoomOccupants();
+                    setInterval(updateRoomOccupants, 30000);
+                </script>
+                <p class="mb-3 text-center text-muted fst-italic small">รหัสจะใช้ได้เพียง 30 นาที</p>
+                <% if (activeCode && activeExpiration) { %>
+                    <div class="alert alert-success text-center py-2" role="alert">
+                        <h4 class="alert-heading fs-5">รหัสการเข้าใช้ห้องของคุณคือ:</h4>
+                        <p class="display-6 mb-0"><strong><%= activeCode %></strong></p>
+                        <p class="mt-2 small">รหัสนี้จะหมดอายุเมื่อ: <span class="text-danger"><%= activeExpiration %></span></p>
+                    </div>
+                <% } else { %>
+                    <div class="alert alert-warning text-center py-2" role="alert">
+                        <p class="mb-0 small">คุณยังไม่มีรหัสที่ใช้งานได้ กรุณาขอรหัสใหม่</p>
+                    </div>
+                <% } %>
+                <form action="/room" method="post" class="mb-3 text-center">
+                    <h4 class="mb-2 text-secondary fs-5">ขอรหัสการเข้าใช้ห้อง</h4>
+                    <button type="submit" class="btn btn-primary">ยืนยัน</button>
+                </form>
+                <% if (typeof message !== 'undefined') { %>
+                    <div class="alert alert-info text-center py-2" role="alert">
+                        <small><%= message %></small>
+                    </div>
+                <% } %>
             </div>
-        <% } else { %>
-            <p class="alert alert-warning">คุณยังไม่มีรหัสที่ใช้งานได้ กรุณาขอรหัสใหม่</p>
-        <% } %>
-        <form action="/room" method="post" class="mb-4">
-            <h4 class="mb-3">ขอรหัสการเข้าใช้ห้อง</h4>
-            <button type="submit" class="btn btn-primary">ยืนยัน</button>
-        </form>
-        <% if (typeof message !== 'undefined') { %>
-            <div class="alert alert-info" role="alert">
-                <%= message %>
-            </div>
-        <% } %>
-        <a href="/logout" class="btn btn-secondary">ออกจากระบบ</a>
+        </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

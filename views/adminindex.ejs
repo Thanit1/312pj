@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>หน้าแสดงผลผู้ดูแลระบบ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">ระบบผู้ดูแล</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminindex">หน้าหลัก</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminall-logs">ดูบันทึกทั้งหมด</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminlogout">ออกจากระบบ</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 class="text-center mb-4">บันทึกการใช้งานรหัส</h1>
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>รหัสผู้ใช้</th>
+                    <th>รหัสการใช้งาน</th>
+                    <th>เวลาที่สร้าง</th>
+                    <th>เวลาที่หมดอายุ</th>
+                    <th>เวลาที่ใช้งาน</th>
+                    <th>สถานะ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% code_usage_logs.forEach(log => { %>
+                    <tr>
+                        <td><%= log.user_id %></td>
+                        <td><%= log.code %></td>
+                        <td><%= new Date(log.created_at).toLocaleString('th-TH') %></td>
+                        <td><%= new Date(log.expires_at).toLocaleString('th-TH') %></td>
+                        <td><%= log.used_at ? new Date(log.used_at).toLocaleString('th-TH') : 'ยังไม่ใช้งาน' %></td>
+                        <td><%= log.is_used ? 'ใช้งานแล้ว' : 'ยังไม่ใช้งาน' %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -13,13 +13,10 @@ const nodemailer = require('nodemailer'); // เพิ่มการนำเ�
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
-    secret: 'your-secret-key',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { 
-        secure: false, // เปลี่ยนเป็น false ถ้าไม่ได้ใช้ HTTPS
-        maxAge: 30 * 60 * 1000 // 30 นาที
-    }
+    secret: 'your_secret_key', 
+    name: 'session',
+    keys: ['key1', 'key2'],
+    maxAge: 3600 * 1000 // 1hr
 }));
 
 app.set('view engine', 'ejs');
@@ -43,7 +40,8 @@ app.get('/index', async (req, res) => {
     
     try {
         const currentTime = new Date();
-       
+        // แปลงเวลาปัจจุบันเป็นเวลาท้องถิ่นของไทย
+        const thaiCurrentTime = new Date(currentTime.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
         const query = 'SELECT access_code, expiration_time FROM room_requests WHERE user_id = $1 AND expiration_time > $2 ORDER BY expiration_time DESC LIMIT 1';
         const result = await dbConnection.query(query, [req.session.user.number, currentTime]);
         
@@ -53,7 +51,9 @@ app.get('/index', async (req, res) => {
 
         if (result.rows.length > 0) {
             activeCode = result.rows[0].access_code;
-            activeExpiration = result.rows[0].expiration_time;
+            // แปลงเวลาท้องถิ่นของไทยให้แสดงแค่วันและเวลา
+            activeExpiration = new Date(result.rows[0].expiration_time.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+            activeExpiration = activeExpiration.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
         }
         
         // ส่งค่าทั้งหมดไปยังเทมเพลต
@@ -68,8 +68,40 @@ app.get('/index', async (req, res) => {
         res.status(500).send('เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์');
     }
 });
-app.get('/', isnotlogin, (req, res) => {
-    res.render('index', { user: req.session.user, id: req.session.id });
+app.get('/', isnotlogin,  async(req, res) => {
+    if (!req.session.user) {
+        return res.redirect('/login');
+    }
+    
+    try {
+        const currentTime = new Date();
+        // แปลงเวลาปัจจุบันเป็นเวลาท้องถิ่นของไทย
+        const thaiCurrentTime = new Date(currentTime.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+        const query = 'SELECT access_code, expiration_time FROM room_requests WHERE user_id = $1 AND expiration_time > $2 ORDER BY expiration_time DESC LIMIT 1';
+        const result = await dbConnection.query(query, [req.session.user.number, currentTime]);
+        
+        // กำหนดค่าเริ่มต้นให้กับ activeCode และ activeExpiration
+        let activeCode = null;
+        let activeExpiration = null;
+
+        if (result.rows.length > 0) {
+            activeCode = result.rows[0].access_code;
+            // แปลงเวลาท้องถิ่นของไทยให้แสดงแค่วันและเวลา
+            activeExpiration = new Date(result.rows[0].expiration_time.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+            activeExpiration = activeExpiration.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+        
+        // ส่งค่าทั้งหมดไปยังเทมเพลต
+        res.render('index', { 
+            user: req.session.user, 
+            id: req.session.user.id, // เปลี่ยนจาก req.session.id เป็น req.session.user.id
+            activeCode: activeCode, // ส่ง activeCode
+            activeExpiration: activeExpiration // ส่ง activeExpiration
+        });
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการดึงข้อมูล:', error);
+        res.status(500).send('เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์');
+    }
   });
 
 app.get('/resgister', islogin, (req, res) => {
@@ -211,7 +243,7 @@ app.post('/room', isnotlogin, async (req, res) => {
         if (checkResult.rows.length > 0) {
             // ถ้ามีรหัสที่ยังไม่หมดอายุ ส่งกลับรหัสเดิมและเวลาหมดอายุ
             const existingRequest = checkResult.rows[0];
-            const thaiExpirationTime = existingRequest.expiration_time;
+            const thaiExpirationTime = existingRequest.expiration_time.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
             return res.render('index', { 
                 user: req.session.user,
                 id: userId,
@@ -313,6 +345,204 @@ app.get('/all-code', async (req, res) => {
         console.error('เกิดข้อผิดพลาดในการตรวจสอบรหัส:', err);
         res.status(500).json({ error: 'เกิดข้อผิดพลาดในการตรวจสอบรหัส' });
     }
+});
+
+// ... existing code ...
+
+app.get('/reset-password', (req, res) => {
+    res.render('reset-password', { error: null, success: null });
+});
+
+app.post('/reset-password', async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        // ตรวจสอบว่าอีเมลมีอยู่ในฐานข้อมูลหรือไม่
+        const query = 'SELECT * FROM users WHERE email = $1';
+        const result = await dbConnection.query(query, [email]);
+
+        if (result.rows.length === 0) {
+            return res.render('reset-password', { error: 'ไม่พบอีเมลนี้ในระบบ', success: null });
+        }
+
+        const token = crypto.randomBytes(20).toString('hex');
+        const updateQuery = 'UPDATE users SET verification_token = $1 WHERE email = $2';
+        await dbConnection.query(updateQuery, [token, email]);
+
+        // ส่งอีเมลสำหรับรีเซ็ตรหัสผ่าน
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: 'thanit.sn02@gmail.com',
+                pass: 'ogxi yywv crlg ezzr'
+            }
+        });
+
+        const mailOptions = {
+            from: 'thanit.sn02@gmail.com',
+            to: email,
+            subject: 'รีเซ็ตรหัสผ่าน',
+            text: `กรุณาคลิกที่ลิงก์นี้เพื่อตั้งรหัสผ่านใหม่: http://172.25.11.151:5900/new-password?token=${token}`
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                return console.log('เกิดข้อผิดพลาดในการส่งอีเมล:', error);
+            }
+            console.log('อีเมลถูกส่ง:', info.response);
+        });
+
+        res.render('reset-password', { success: 'ลิงก์รีเซ็ตรหัสผ่านถูกส่งไปยังอีเมลของคุณ', error: null });
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน:', error);
+        res.render('reset-password', { error: 'เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน', success: null });
+    }
+});
+
+app.get('/new-password', async (req, res) => {
+    const token = req.query.token;
+    res.render('new-password', { token, error: null, success: null });
+});
+
+app.post('/new-password', async (req, res) => {
+    const { token, password } = req.body;
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const updateQuery = 'UPDATE users SET password = $1, verification_token = NULL WHERE verification_token = $2';
+        const result = await dbConnection.query(updateQuery, [hashedPassword, token]);
+
+        if (result.rowCount > 0) {
+            res.render('login', { success: 'รหัสผ่านของคุณถูกตั้งใหม่เรียบร้อยแล้ว', error: null });
+        } else {
+            res.render('new-password', { token, error: 'เกิดข้อผิดพลาดในการตั้งรหัสผ่านใหม่', success: null });
+        }
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการตั้งรหัสผ่านใหม่:', error);
+        res.render('new-password', { token, error: 'เกิดข้อผิดพลาดในการตั้งรหัสผ่านใหม่', success: null });
+    }
+});
+
+app.get('/api/room-occupants', async (req, res) => {
+    try {
+        const result = await dbConnection.query('SELECT occupants_count FROM rooms WHERE id = 1'); // ดึงข้อมูลจำนวนคนในห้อง 312
+        
+        const count = result.rows.length > 0 ? result.rows[0].occupants_count : 0; // ตรวจสอบว่ามีข้อมูลหรือไม่
+        res.json({ count });
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการดึงข้อมูลจำนวนคนในห้อง:', error);
+        res.status(500).json({ error: 'เกิดข้อผิดพลาดในการดึงข้อมูลจำนวนคนในห้อง' });
+    }
+});
+
+app.get('/locker', isnotlogin, (req, res) => {
+    res.render('locker', { error: null, success: null });
+});
+// ... existing code ...
+
+//ระบบแอดมิน
+app.get('/adminlogin', (req, res) => {
+    res.render('adminlogin', { error: null, success: null });
+});
+app.post('/adminlogin', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        const query = 'SELECT * FROM admins WHERE username = $1';
+        const result = await dbConnection.query(query, [username]);
+
+        if (result.rows.length === 0) {
+            return res.render('adminlogin', { error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', success: null });
+        }
+
+        const user = result.rows[0];
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            return res.render('adminlogin', { error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', success: null });
+        }
+
+        req.session.admin = user;
+        res.redirect('/adminindex');
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการตรวจสอบข้อมูลผู้ใช้:', error);
+        res.render('adminlogin', { error: 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูลผู้ใช้', success: null });
+    }
+});
+
+// ระบบแอดมิน
+app.get('/adminregister', (req, res) => {
+    res.render('adminregister', { error: null, success: null });
+});
+
+app.post('/adminregister', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        // ตรวจสอบว่ามีชื่อผู้ใช้นี้ในฐานข้อมูลแล้วหรือไม่
+        const checkQuery = 'SELECT * FROM admins WHERE username = $1';
+        const checkResult = await dbConnection.query(checkQuery, [username]);
+
+        if (checkResult.rows.length > 0) {
+            return res.render('adminregister', { error: 'ชื่อผู้ใช้นี้มีอยู่ในระบบแล้ว กรุณาใช้ชื่ออื่น', success: null });
+        }
+
+        // เข้ารหัสรหัสผ่านด้วย bcrypt
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // บันทึกข้อมูลผู้ดูแลระบบใหม่
+        const insertQuery = 'INSERT INTO admins (username, password) VALUES ($1, $2)';
+        await dbConnection.query(insertQuery, [username, hashedPassword]);
+
+        res.render('adminlogin', { success: 'สมัครสมาชิกผู้ดูแลระบบสำเร็จ กรุณาเข้าสู่ระบบ', error: null });
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการสมัครสมาชิกผู้ดูแลระบบ:', error);
+        res.render('adminregister', { error: 'เกิดข้อผิดพลาดในการสมัครสมาชิกผู้ดูแลระบบ', success: null });
+    }
+});
+
+app.get('/adminindex', async (req, res) => {
+    try {
+        const query = `
+            SELECT r.user_id, r.access_code as code, r.request_time as created_at, r.expiration_time as expires_at,
+            CASE WHEN c.usage_time IS NOT NULL THEN true ELSE false END as is_used,
+            c.usage_time as used_at
+            FROM room_requests r
+            LEFT JOIN code_usage_logs c ON r.access_code = c.access_code
+            ORDER BY r.request_time DESC
+        `;
+        const result = await dbConnection.query(query);
+        const code_usage_logs = result.rows;
+        
+        res.render('adminindex', { code_usage_logs });
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกการใช้งานรหัส:', error);
+        res.render('adminindex', { error: 'เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกการใช้งานรหัส', code_usage_logs: [] });
+    }
+});
+
+app.get('/adminall-logs', async (req, res) => {
+    try {
+        const query = `
+            SELECT c.id, c.user_id, u.firstname || ' ' || u.lastname AS full_name, c.access_code, c.usage_time
+            FROM code_usage_logs c
+            JOIN users u ON c.user_id::varchar = u.number
+            ORDER BY c.usage_time DESC
+        `;
+        const result = await dbConnection.query(query);
+        const all_logs = result.rows;
+
+        res.render('adminall-logs', { all_logs });
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกการใช้งานรหัส:', error);
+        res.render('adminall-logs', { error: 'เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกการใช้งานรหัส', all_logs: [] });
+    }
+});
+
+
+app.get('/adminlogout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/adminlogin');
 });
 
 app.get('/logout', (req, res) => {
