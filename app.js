@@ -7,10 +7,24 @@ const exceljs = require('exceljs');
 const fs = require('fs');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const multer = require('multer');
+const nodemailer = require('nodemailer'); // เพิ่มการนำเข้า nodemailer
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'public/uploads/')
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + path.extname(file.originalname))
+    }
+});
+
+const upload = multer({ storage: storage });
 const app = express();
 const port = 3000;
-const nodemailer = require('nodemailer'); // เพิ่มการนำเข้า nodemailer
+
+app.use('/uploads', express.static('uploads'));
 app.use(express.static('public'));
+app.use(express.static('uploads'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
     secret: 'your_secret_key', 
@@ -61,35 +75,38 @@ app.get('/index', async (req, res) => {
     }
 });
 
-app.get('/', isnotlogin, async (req, res) => {
-    if (!req.session.user) {
-        return res.redirect('/login');
-    }
-    
+app.get('/', async (req, res) => {
     try {
-        const query = 'SELECT access_code FROM room_requests WHERE user_id = $1 AND is_used = FALSE ORDER BY request_time DESC LIMIT 1';
-        const result = await dbConnection.query(query, [req.session.user.number]);
-        
-        // กำหนดค่าเริ่มต้นให้กับ activeCode
-        let activeCode = null;
+        // ดึงข้อมูลข่าวล่าสุด
+        const newsQuery = 'SELECT id, title, content, image_url, reference, created_at FROM news ORDER BY created_at DESC LIMIT 5';
+        const newsResult = await dbConnection.query(newsQuery);
+        const news = newsResult.rows;
 
-        if (result.rows.length > 0) {
-            activeCode = result.rows[0].access_code;
-        }
-        
+        // ดึงข้อมูลโพสต์ล่าสุด
+        const postsQuery = `
+            SELECT p.id, p.title, u.firstname || ' ' || u.lastname AS author
+            FROM posts p
+            JOIN users u ON p.user_id = u.id
+            ORDER BY p.created_at DESC
+            LIMIT 3
+        `;
+        const postsResult = await dbConnection.query(postsQuery);
+        const posts = postsResult.rows;
+
         // ส่งค่าทั้งหมดไปยังเทมเพลต
-        res.render('index', { 
+        res.render('computer_engineering', { 
             user: req.session.user, 
-            id: req.session.user.id,
-            activeCode: activeCode
+            currentPage: 'computer_engineering',
+            news: news,
+            posts: posts
         });
     } catch (error) {
         console.error('เกิดข้อผิดพลาดในการดึงข้อมูล:', error);
-        res.status(500).send('เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์');
+        res.status(500).send('เกิดข้อผิดพลาดในการโหลดหน้า');
     }
 });
 app.get('/register', islogin, (req, res) => {
-    res.render('register', { error: null, success: null });
+    res.render('register', { error: null, success: null , user: null});
 });
 
 app.post('/register', async (req, res) => {
@@ -186,7 +203,7 @@ app.get('/verify-email', async (req, res) => {
     
 });
 app.get('/login', islogin, (req, res) => {
-    res.render('login', { error: null, success: null });
+    res.render('login', { error: null, success: null , user: null});
 });
 
 app.post('/login', async (req, res) => {
@@ -416,9 +433,331 @@ app.get('/api/room-occupants', async (req, res) => {
 });
 
 app.get('/locker', isnotlogin, (req, res) => {
-    res.render('locker', { error: null, success: null });
+   
+    res.render('locker', { 
+        user: req.session.user, 
+    })
+});
+
+
+app.get('/computer_engineering', async (req, res) => {
+    try {
+        // ดึงข้อมูลข่าวล่าสุด
+        const newsQuery = 'SELECT id, title, content, image_url, reference, created_at FROM news ORDER BY created_at DESC LIMIT 5';
+        const newsResult = await dbConnection.query(newsQuery);
+        const news = newsResult.rows;
+
+        // ดึงข้อมูลโพสต์ล่าสุด
+        const postsQuery = `
+            SELECT p.id, p.title, u.firstname || ' ' || u.lastname AS author
+            FROM posts p
+            JOIN users u ON p.user_id = u.id
+            ORDER BY p.created_at DESC
+            LIMIT 3
+        `;
+        const postsResult = await dbConnection.query(postsQuery);
+        const posts = postsResult.rows;
+
+        res.render('computer_engineering', { 
+            user: req.session.user, 
+            currentPage: 'computer_engineering',
+            news: news,
+            posts: posts
+        });
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการดึงข้อมูล:', error);
+        res.status(500).send('เกิดข้อผิดพลาดในการโหลดหน้า');
+    }
+});
+
+app.get('/news/:id', async (req, res) => {
+    try {
+        const query = 'SELECT * FROM news WHERE id = $1';
+        const result = await dbConnection.query(query, [req.params.id]);
+        const newsItem = result.rows[0];
+        
+        if (!newsItem) {
+            return res.status(404).send('ไม่พบข่าวที่คุณต้องการ');
+        }
+
+        res.render('news_detail', { 
+            user: req.session.user, 
+            currentPage: 'news',
+            newsItem: newsItem
+        });
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการดึงข้อมูลข่าว:', error);
+        res.status(500).send('เกิดข้อผิดพลาดในการโหลดหน้า');
+    }
 });
 // ... existing code ...
+
+// เพิ่มเส้นทางสำหรับหน้าข่าวทั้งหมด
+app.get('/news', async (req, res) => {
+    try {
+        const query = 'SELECT * FROM news ORDER BY created_at DESC';
+        const result = await dbConnection.query(query);
+        const allNews = result.rows;
+        
+        res.render('news', { 
+            user: req.session.user, 
+            currentPage: 'news',
+            allNews: allNews
+        });
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการดึงข้อมูลข่าว:', error);
+        res.status(500).send('เกิดข้อผิดพลาดในการโหลดหน้าข่าว');
+    }
+});
+
+// ... โค้ดอื่น ๆ ...
+
+//กระทู้
+// ... existing code ...
+
+app.get('/forum', async (req, res) => {
+    try {
+        const query = `
+            SELECT p.id, p.title, u.firstname || ' ' || u.lastname AS author, p.created_at, p.image_url
+            FROM posts p
+            JOIN users u ON p.user_id = u.id
+            ORDER BY p.created_at DESC
+        `;
+        const result = await dbConnection.query(query);
+        const posts = result.rows;
+        
+        res.render('forum', { 
+            posts, 
+            error: null, 
+            success: null, 
+            user: req.session.user,  // เพิ่มบรรทัดนี้
+            currentPage: 'forum'     // เพิ่มบรรทัดนี้เพื่อระบุหน้าปัจจุบัน
+        });
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการดึงข้อมูลกระทู้:', error);
+        res.render('forum', { 
+            error: 'เกิดข้อผิดพลาดในการดึงข้อมูลกระทู้', 
+            success: null, 
+            posts: [],
+            user: req.session.user,  // เพิ่มบรรทัดนี้
+            currentPage: 'forum'     // เพิ่มบรรทัดนี้เพื่อระบุหน้าปัจจุบัน
+        });
+    }
+});
+
+// ... remaining code ...
+// สร้างกระทู้ใหม่
+app.post('/forum/create', isnotlogin, upload.single('image'), async (req, res) => {
+    const { title, content } = req.body;
+    const userId = req.session.user.id;
+    const imagePath = req.file ? '/uploads/' + req.file.filename : null;
+
+    try {
+        const insertQuery = 'INSERT INTO posts (title, content, user_id, image_url) VALUES ($1, $2, $3, $4)';
+        await dbConnection.query(insertQuery, [title, content, userId, imagePath]);
+        
+        res.redirect('/forum');
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการสร้างกระทู้:', error);
+        res.redirect('/forum');
+    }
+});
+
+
+// ลบกระทู้
+app.post('/forum/post/:id/delete', isnotlogin, async (req, res) => {
+    const postId = req.params.id;
+    
+    try {
+        // ตรวจสอบว่าผู้ใช้เป็นเจ้าของกระทู้หรือไม่
+        const postQuery = 'SELECT * FROM posts WHERE id = $1';
+        const postResult = await dbConnection.query(postQuery, [postId]);
+        
+        if (postResult.rows.length === 0) {
+            return res.status(404).send('ไม่พบกระทู้นี้');
+        }
+        
+        if (postResult.rows[0].user_id !== req.session.user.id) {
+            return res.status(403).send('คุณไม่มีสิทธิ์ลบกระทู้นี้');
+        }
+        
+        // ลบความคิดเห็นที่เกี่ยวข้องกับกระทู้ก่อน
+        const deleteCommentsQuery = 'DELETE FROM comments WHERE post_id = $1';
+        await dbConnection.query(deleteCommentsQuery, [postId]);
+        
+        // ลบกระทู้
+        const deletePostQuery = 'DELETE FROM posts WHERE id = $1';
+        await dbConnection.query(deletePostQuery, [postId]);
+        
+        res.redirect('/forum');
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการลบกระทู้:', error);
+        res.status(500).send('เกิดข้อผิดพลาดในการลบกระทู้ โปรดลองอีกครั้งในภายหลัง');
+    }
+});
+
+// แก้ไขกระทู้
+app.post('/forum/post/:id/edit', isnotlogin, upload.single('image'), async (req, res) => {
+    const postId = req.params.id;
+    const { editedTitle, editedContent } = req.body;
+    const imagePath = req.file ? '/uploads/' + req.file.filename : null;
+    
+    try {
+        // ตรวจสอบว่าผู้ใช้เป็นเจ้าของกระทู้หรือไม่
+        const postQuery = 'SELECT * FROM posts WHERE id = $1';
+        const postResult = await dbConnection.query(postQuery, [postId]);
+        
+        if (postResult.rows.length === 0) {
+            return res.status(404).send('ไม่พบกระทู้นี้');
+        }
+        
+        if (postResult.rows[0].user_id !== req.session.user.id) {
+            return res.status(403).send('คุณไม่มีสิทธิ์แก้ไขกระทู้นี้');
+        }
+        
+        let updateQuery, queryParams;
+        if (imagePath) {
+            updateQuery = 'UPDATE posts SET title = $1, content = $2, image_url = $3 WHERE id = $4';
+            queryParams = [editedTitle, editedContent, imagePath, postId];
+        } else {
+            updateQuery = 'UPDATE posts SET title = $1, content = $2 WHERE id = $3';
+            queryParams = [editedTitle, editedContent, postId];
+        }
+        
+        await dbConnection.query(updateQuery, queryParams);
+        
+        res.redirect(`/forum/view/${postId}`);
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการแก้ไขกระทู้:', error);
+        res.status(500).send('เกิดข้อผิดพลาดในการแก้ไขกระทู้');
+    }
+});
+// ดูรายละเอียดกระทู้
+app.get('/forum/view/:id', async (req, res) => {
+    const postId = req.params.id;
+
+    try {
+        const postQuery = `
+            SELECT p.id, p.title, p.content, p.image_url, u.firstname || ' ' || u.lastname AS full_name, p.created_at, p.user_id
+            FROM posts p 
+            JOIN users u ON p.user_id = u.id 
+            WHERE p.id = $1
+        `;
+        const postResult = await dbConnection.query(postQuery, [postId]);
+        
+        if (postResult.rows.length > 0) {
+            const post = postResult.rows[0];
+
+            const commentQuery = `
+                SELECT c.id, c.content, u.firstname || ' ' || u.lastname AS commenter_name, c.created_at, c.user_id
+                FROM comments c
+                JOIN users u ON c.user_id = u.id
+                WHERE c.post_id = $1
+                ORDER BY c.created_at ASC
+            `;
+            const commentResult = await dbConnection.query(commentQuery, [postId]);
+            const comments = commentResult.rows;
+            
+            res.render('forum_view', { 
+                post, 
+                comments,
+                error: null, 
+                success: null, 
+                user: req.session.user
+            });
+        } else {
+            res.render('forum', { error: 'ไม่พบกระทู้นี้', success: null });
+        }
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการดึงข้อมูลกระทู้:', error);
+        res.render('forum', { error: 'เกิดข้อผิดพลาดในการดึงข้อมูลกระทู้', success: null });
+    }
+});
+
+// เพิ่มความคิดเห็น
+app.post('/forum/comment', isnotlogin, async (req, res) => {
+    const { postId, content } = req.body;
+    const userId = req.session.user.id;
+
+    try {
+        const insertQuery = 'INSERT INTO comments (post_id, user_id, content) VALUES ($1, $2, $3)';
+        await dbConnection.query(insertQuery, [postId, userId, content]);
+        
+        res.redirect(`/forum/view/${postId}`);
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการเพิ่มความคิดเห็น:', error);
+        res.render('forum_view', { 
+            error: 'เกิดข้อผิดพลาดในการเพิ่มความคิดเห็น', 
+            success: null,
+            post: { id: postId },
+            comments: [],
+            user: req.session.user
+        });
+    }
+});
+
+// แก้ไขความคิดเห็น
+app.post('/forum/comment/:id/edit', isnotlogin, async (req, res) => {
+    const commentId = req.params.id;
+    const postId = req.body.postId;
+    const editedComment = req.body.editedComment;
+    
+    try {
+        // ตรวจสอบว่าผู้ใช้เป็นเจ้าของความคิดเห็นหรือไม่
+        const commentQuery = 'SELECT * FROM comments WHERE id = $1';
+        const commentResult = await dbConnection.query(commentQuery, [commentId]);
+        
+        if (commentResult.rows.length === 0) {
+            return res.status(404).send('ไม่พบความคิดเห็นนี้');
+        }
+        
+        if (commentResult.rows[0].user_id !== req.session.user.id) {
+            return res.status(403).send('คุณไม่มีสิทธิ์แก้ไขความคิดเห็นนี้');
+        }
+        
+        const updateQuery = 'UPDATE comments SET content = $1 WHERE id = $2';
+        await dbConnection.query(updateQuery, [editedComment, commentId]);
+        
+        res.redirect(`/forum/view/${postId}`);
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการแก้ไขความคิดเห็น:', error);
+        res.status(500).send('เกิดข้อผิดพลาดในการแก้ไขความคิดเห็น');
+    }
+});
+
+// ลบความคิดเห็น
+app.post('/forum/comment/:id/delete', isnotlogin, async (req, res) => {
+    const commentId = req.params.id;
+    const postId = req.body.postId;
+    
+    try {
+        // ตรวจสอบว่าผู้ใช้เป็นเจ้าของความคิดเห็นหรือไม่
+        const commentQuery = 'SELECT * FROM comments WHERE id = $1';
+        const commentResult = await dbConnection.query(commentQuery, [commentId]);
+        
+        if (commentResult.rows.length === 0) {
+            return res.status(404).send('ไม่พบความคิดเห็นนี้');
+        }
+        
+        if (commentResult.rows[0].user_id !== req.session.user.id) {
+            return res.status(403).send('คุณไม่มีสิทธิ์ลบความคิดเห็นนี้');
+        }
+        
+        const deleteQuery = 'DELETE FROM comments WHERE id = $1';
+        await dbConnection.query(deleteQuery, [commentId]);
+        
+        res.redirect(`/forum/view/${postId}`);
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการลบความคิดเห็น:', error);
+        res.status(500).send('เกิดข้อผิดพลาดในการลบความคิดเห็น');
+    }
+});
+
+// ... existing code ...
+
+
+
+
 
 //ระบบแอดมิน
 
@@ -534,6 +873,100 @@ app.get('/adminall-logs', isnotAdmin, async (req, res) => {
     } catch (error) {
         console.error('เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกการใช้งานรหัส:', error);
         res.render('adminall-logs', { error: 'เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกการใช้งานรหัส', all_logs: [] });
+    }
+});
+
+app.get('/admin/edit-news/:id', isnotAdmin, async (req, res) => {
+    try {
+        const query = 'SELECT * FROM news WHERE id = $1';
+        const result = await dbConnection.query(query, [req.params.id]);
+        const news = result.rows[0];
+        
+        if (!news) {
+            return res.status(404).send('ไม่พบข่าวที่ต้องการแก้ไข');
+        }
+
+        res.render('edit_news', { 
+            user: req.session.user, 
+            currentPage: 'admin',
+            news: news
+        });
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการโหลดข่าวสำหรับแก้ไข:', error);
+        res.status(500).send('เกิดข้อผิดพลาดในการโหลดหน้าแก้ไขข่าว');
+    }
+});
+
+// เส้นทางสำหรับหน้าจัดการข่าว
+app.get('/admin/news', isnotAdmin, async (req, res) => {
+    try {
+        const query = 'SELECT * FROM news ORDER BY created_at DESC';
+        const result = await dbConnection.query(query);
+        const news = result.rows;
+        res.render('admin_news', { news });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('เกิดข้อผิดพลาดในการโหลดข่าว');
+    }
+});
+
+// เส้นทางสำหรับการเพิ่มข่าว
+app.post('/admin/add-news', isnotAdmin, upload.single('image'), async (req, res) => {
+    try {
+        const { title, content, reference } = req.body;
+        const imagePath = req.file ? '/uploads/' + req.file.filename : null;
+
+        const query = 'INSERT INTO news (title, content, image_url, reference) VALUES ($1, $2, $3, $4)';
+        await dbConnection.query(query, [title, content, imagePath, reference]);
+        res.redirect('/admin/news');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('เกิดข้อผิดพลาดในการเพิ่มข่าว');
+    }
+});
+
+// เส้นทางสำหรับการลบข่าว
+app.post('/admin/delete-news/:id', isnotAdmin, async (req, res) => {
+    try {
+        const query = 'DELETE FROM news WHERE id = $1';
+        await dbConnection.query(query, [req.params.id]);
+        res.redirect('/admin/news');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('เกิดข้อผิดพลาดในการลบข่าว');
+    }
+});
+
+// เส้นทางสำหรับหน้าแก้ไขข่าว
+app.get('/admin/edit-news/:id', isnotAdmin, async (req, res) => {
+    try {
+        const query = 'SELECT * FROM news WHERE id = $1';
+        const result = await dbConnection.query(query, [req.params.id]);
+        const news = result.rows[0];
+        res.render('edit_news', { news });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('เกิดข้อผิดพลาดในการโหลดข่าวสำหรับแก้ไข');
+    }
+});
+
+// เส้นทางสำหรับการอัปเดตข่าว
+app.post('/admin/update-news/:id', isnotAdmin, upload.single('image'), async (req, res) => {
+    try {
+        const { title, content, reference } = req.body;
+        let query, params;
+        if (req.file) {
+            query = 'UPDATE news SET title = $1, content = $2, image_url = $3, reference = $4 WHERE id = $5';
+            params = [title, content, '/uploads/' + req.file.filename, reference, req.params.id];
+        } else {
+            query = 'UPDATE news SET title = $1, content = $2, reference = $3 WHERE id = $4';
+            params = [title, content, reference, req.params.id];
+        }
+        await dbConnection.query(query, params);
+        res.redirect('/admin/news');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('เกิดข้อผิดพลาดในการอัปเดตข่าว');
     }
 });
 

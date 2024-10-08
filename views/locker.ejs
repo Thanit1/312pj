@@ -10,15 +10,26 @@
             background-color: #f8f9fa;
         }
         .navbar {
-            background-color: #007bff !important;
+            background-color: #3b5998 !important;
             box-shadow: 0 2px 4px rgba(0,0,0,.1);
         }
         .navbar-brand, .nav-link {
             color: #ffffff !important;
-            font-weight: 500;
         }
-        .navbar-brand:hover, .nav-link:hover {
-            color: #f8f9fa !important;
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .btn-primary {
+            background-color: #3b5998;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #2d4373;
+        }
+        .display-6 {
+            font-size: 2.5rem;
+            font-weight: 500;
         }
         .card {
             border: none;
@@ -38,27 +49,7 @@
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/index">หน้าแรก</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/index">ขอเข้าใช้ห้อง</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="/locker">ขอใช้ตู้เก็บของ</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/logout">ออกจากระบบ</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <%- include('nav', { user: user, currentPage: 'locker' }) %>
     <div class="container mt-5">
         <div class="card shadow-sm col-md-8 mx-auto">
             <div class="card-body text-center">

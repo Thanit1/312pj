@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการข่าวสาร</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Kanit', sans-serif;
+        }
+        .container {
+            max-width: 1000px;
+            margin-top: 30px;
+        }
+        .navbar {
+            background-color: #3b5998 !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        }
+        .navbar-brand, .nav-link {
+            color: #ffffff !important;
+        }
+        .table {
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,.1);
+        }
+        .table thead {
+            background-color: #4267B2;
+            color: #ffffff;
+        }
+        .btn-danger {
+            background-color: #e74c3c;
+            border: none;
+        }
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">ระบบผู้ดูแล</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminindex">จัดการผู้ใช้งาน</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/admin/news">จัดการข่าวสาร</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminall-logs">ดูบันทึกทั้งหมด</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminlogout">ออกจากระบบ</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 class="text-center mb-4">จัดการข่าวสาร</h1>
+
+        <!-- ส่วนเพิ่มข่าวใหม่ -->
+        <h2 class="mb-3">เพิ่มข่าวใหม่</h2>
+        <form action="/admin/add-news" method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="newsTitle" class="form-label">หัวข้อข่าว</label>
+                <input type="text" class="form-control" id="newsTitle" name="title" required>
+            </div>
+            <div class="mb-3">
+                <label for="newsContent" class="form-label">เนื้อหาข่าว</label>
+                <textarea class="form-control" id="newsContent" name="content" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="newsImage" class="form-label">รูปภาพประกอบข่าว</label>
+                <input type="file" class="form-control" id="newsImage" name="image" accept="image/*">
+            </div>
+            <div class="mb-3">
+                <label for="newsReference" class="form-label">ลิงค์อ้างอิง</label>
+                <input type="url" class="form-control" id="newsReference" name="reference" placeholder="https://example.com">
+            </div>
+            <button type="submit" class="btn btn-primary">เพิ่มข่าว</button>
+        </form>
+
+        <!-- ส่วนแสดงข่าวที่มีอยู่ -->
+        <h2 class="mt-5 mb-3">ข่าวที่มีอยู่</h2>
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>หัวข้อข่าว</th>
+                    <th>วันที่เผยแพร่</th>
+                    <th>ลิงค์อ้างอิง</th>
+                    <th>การดำเนินการ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% news.forEach(item => { %>
+                    <tr>
+                        <td><%= item.title %></td>
+                        <td><%= new Date(item.createdAt).toLocaleDateString('th-TH') %></td>
+                        <td>
+                            <% if (item.reference) { %>
+                                <a href="<%= item.reference %>" target="_blank">ดูลิงค์</a>
+                            <% } else { %>
+                                -
+                            <% } %>
+                        </td>
+                        <td>
+                            <a href="/admin/edit-news/<%= item.id %>" class="btn btn-warning btn-sm">แก้ไข</a>
+                            <form action="/admin/delete-news/<%= item.id %>" method="POST" class="d-inline" onsubmit="return confirm('คุณแน่ใจหรือไม่ที่จะลบข่าวนี้?');">
+                                <button type="submit" class="btn btn-danger btn-sm">ลบ</button>
+                            </form>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
