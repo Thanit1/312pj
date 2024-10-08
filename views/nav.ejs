@@ -1,39 +1,129 @@
-<nav class="navbar navbar-expand-lg navbar-dark">
+<div class="header-container">
+    <img src="/img/logo.png" alt="โลโก้สาขาวิศวกรรมคอมพิวเตอร์ มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน วิทยาเขตขอนแก่น" class="logo-img">
+    <div class="header-text">
+        <h1>สาขาวิศวกรรมคอมพิวเตอร์</h1>
+        <h2>คณะวิศวกรรมศาสตร์</h2>
+        <h3>มหาวิทยาลัยเทคโนโลยีราชมงคลอีสาน</h3>
+        <h4>วิทยาเขตขอนแก่น</h4>
+    </div>
+</div>
+
+<style>
+    .header-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+        text-align: center;
+    }
+    .logo-img {
+        max-width: 80%;
+        height: auto;
+        margin-bottom: 10px;
+    }
+    .header-text h1 {
+        font-size: 1.2rem;
+    }
+    .header-text h2, .header-text h3, .header-text h4 {
+        font-size: 1rem;
+    }
+    @media (min-width: 768px) {
+        .header-container {
+            flex-direction: row;
+            justify-content: center;
+        }
+        .logo-img {
+            max-width: 30%;
+            margin-right: 20px;
+            margin-bottom: 0;
+        }
+        .header-text {
+            text-align: left;
+        }
+    }
+</style>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
-        <a class="navbar-brand" href="/">หน้าแรก</a>
+        <a class="navbar-brand" href="/">
+            <i class="fas fa-home"></i> หน้าหลัก
+        </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" href="/">วิศวกรรมคอมพิวเตอร์</a>
+                    <a class="nav-link" href="/"><i class="fas fa-laptop-code"></i> วิศวกรรมคอมพิวเตอร์</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <%= currentPage === 'forum' ? 'active' : '' %>" href="/forum">กระทู้</a>
+                    <a class="nav-link <%= currentPage === 'forum' ? 'active' : '' %>" href="/forum"><i class="fas fa-comments"></i> กระทู้</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/index">ขอเข้าใช้ห้อง</a>
+                    <a class="nav-link" href="/index"><i class="fas fa-door-open"></i> ขอเข้าใช้ห้อง</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/locker">ขอใช้ตู้เก็บของ</a>
+                    <a class="nav-link" href="/locker"><i class="fas fa-box"></i> ขอใช้ตู้เก็บของ</a>
                 </li>
                 <% if (user) { %>
-                    
-                  
-                    
                     <li class="nav-item">
-                        <a class="nav-link" href="/auth/logout">ออกจากระบบ</a>
+                        <a class="nav-link" href="/auth/logout"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</a>
                     </li>
                 <% } else { %>
                     <li class="nav-item">
-                        <a class="nav-link" href="/auth/login">เข้าสู่ระบบ</a>
+                        <a class="nav-link" href="/auth/login"><i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบ</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/auth/register">สมัครสมาชิก</a>
+                        <a class="nav-link" href="/auth/register"><i class="fas fa-user-plus"></i> สมัครสมาชิก</a>
                     </li>
                 <% } %>
             </ul>
         </div>
     </div>
 </nav>
+
+<style>
+    .header-container {
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        background-color: #f8f9fa;
+    }
+    .logo-img {
+        max-height: 100px;
+        width: auto;
+        object-fit: contain;
+        margin-right: 20px;
+        transition: all 0.3s ease-in-out;
+    }
+    .logo-hover {
+        transform: scale(1.1);
+    }
+    .header-text {
+        font-family: 'Kanit', sans-serif;
+    }
+    .header-text h1 {
+        font-size: 24px;
+        color: #007bff;
+        margin-bottom: 5px;
+    }
+    .header-text h2, .header-text h3, .header-text h4 {
+        font-size: 18px;
+        color: #6c757d;
+        margin-bottom: 3px;
+    }
+    .navbar {
+        box-shadow: 0 2px 4px rgba(0,0,0,.1);
+    }
+    .nav-link {
+        font-size: 16px;
+        padding: 10px 15px;
+        transition: all 0.3s ease;
+    }
+    .nav-link:hover {
+        background-color: rgba(255,255,255,0.1);
+        border-radius: 5px;
+    }
+    .nav-link i {
+        margin-right: 5px;
+    }
+</style>
