@@ -144,50 +144,28 @@
                 <label for="eventDate" class="form-label">วันที่จัดกิจกรรม</label>
                 <input type="date" class="form-control" id="eventDate" name="date" required>
             </div>
-            <div class="mb-3">
-                <label for="eventDescription" class="form-label">รายละเอียดกิจกรรม</label>
-                <textarea class="form-control" id="eventDescription" name="description" rows="3"></textarea>
-            </div>
-            <div class="mb-3">
-                <label for="eventLocation" class="form-label">สถานที่จัดกิจกรรม</label>
-                <input type="text" class="form-control" id="eventLocation" name="location">
-            </div>
             <button type="submit" class="btn btn-primary">เพิ่มกิจกรรม</button>
         </form>
 
         <!-- ตารางแสดงกิจกรรมที่มีอยู่ -->
         <h3 class="mt-5 mb-3">กิจกรรมที่มีอยู่</h3>
-        <table class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <th>ชื่อกิจกรรม</th>
-                    <th>วันที่จัดกิจกรรม</th>
-                    <th>สถานที่</th>
-                    <th>การดำเนินการ</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% if (events && events.length > 0) { %>
-                    <% events.forEach(event => { %>
-                        <tr>
-                            <td><%= event.title %></td>
-                            <td><%= new Date(event.date).toLocaleDateString('th-TH') %></td>
-                            <td><%= event.location || '-' %></td>
-                            <td>
-                                <a href="/admin/edit-event/<%= event.id %>" class="btn btn-warning btn-sm">แก้ไข</a>
-                                <form action="/admin/delete-event/<%= event.id %>" method="POST" class="d-inline" onsubmit="return confirm('คุณแน่ใจหรือไม่ที่จะลบกิจกรรมนี้?');">
-                                    <button type="submit" class="btn btn-danger btn-sm">ลบ</button>
-                                </form>
-                            </td>
-                        </tr>
-                    <% }) %>
-                <% } else { %>
-                    <tr>
-                        <td colspan="4" class="text-center">ไม่มีกิจกรรมในขณะนี้</td>
-                    </tr>
-                <% } %>
-            </tbody>
-        </table>
+        <ul class="list-group">
+            <% if (events && events.length > 0) { %>
+                <% events.forEach(event => { %>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <%= new Date(event.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) %> - <%= event.title %>
+                        <div>
+                            <a href="/admin/edit-event/<%= event.id %>" class="btn btn-warning btn-sm">แก้ไข</a>
+                            <form action="/admin/delete-event/<%= event.id %>" method="POST" class="d-inline" onsubmit="return confirm('คุณแน่ใจหรือไม่ที่จะลบกิจกรรมนี้?');">
+                                <button type="submit" class="btn btn-danger btn-sm">ลบ</button>
+                            </form>
+                        </div>
+                    </li>
+                <% }) %>
+            <% } else { %>
+                <li class="list-group-item text-center">ไม่มีกิจกรรมในขณะนี้</li>
+            <% } %>
+        </ul>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

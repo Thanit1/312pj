@@ -190,18 +190,23 @@
                         <a href="/forum" class="btn btn-primary mt-3"><i class="fas fa-comments me-2"></i>ดูกระทู้ทั้งหมด</a>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-body">
-                <h3 class="card-title section-title">ปฏิทินกิจกรรม</h3>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item"><i class="far fa-calendar-alt me-2 text-primary"></i>15 ส.ค. 2566 - งานสัมมนาวิชาการประจำปี</li>
-                    <li class="list-group-item"><i class="far fa-calendar-alt me-2 text-primary"></i>1 ก.ย. 2566 - เปิดรับสมัครนักศึกษาใหม่</li>
-                    <li class="list-group-item"><i class="far fa-calendar-alt me-2 text-primary"></i>10 ต.ค. 2566 - วันสอบกลางภาค</li>
-                    <li class="list-group-item"><i class="far fa-calendar-alt me-2 text-primary"></i>15 พ.ย. 2566 - งาน Open House</li>
-                </ul>
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3 class="card-title section-title">ปฏิทินกิจกรรม</h3>
+                        <ul class="list-group list-group-flush">
+                            <% if (events && events.length > 0) { %>
+                                <% events.forEach(event => { %>
+                                    <li class="list-group-item">
+                                        <i class="far fa-calendar-alt me-2 text-primary"></i>
+                                        <%= new Date(event.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) %> - <%= event.title %>
+                                    </li>
+                                <% }); %>
+                            <% } else { %>
+                                <li class="list-group-item">ไม่มีกิจกรรมในขณะนี้</li>
+                            <% } %>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
 

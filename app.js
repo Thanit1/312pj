@@ -458,11 +458,17 @@ app.get('/computer_engineering', async (req, res) => {
         const postsResult = await dbConnection.query(postsQuery);
         const posts = postsResult.rows;
 
+        // ดึงข้อมูลกิจกรรมล่าสุด
+        const eventsQuery = 'SELECT id, title, date FROM events ORDER BY date ASC LIMIT 5';
+        const eventsResult = await dbConnection.query(eventsQuery);
+        const events = eventsResult.rows;
+
         res.render('computer_engineering', { 
             user: req.session.user, 
             currentPage: 'computer_engineering',
             news: news,
-            posts: posts
+            posts: posts,
+            events: events
         });
     } catch (error) {
         console.error('เกิดข้อผิดพลาดในการดึงข้อมูล:', error);
@@ -972,6 +978,57 @@ app.post('/admin/update-news/:id', isnotAdmin, upload.single('image'), async (re
     } catch (error) {
         console.error(error);
         res.status(500).send('เกิดข้อผิดพลาดในการอัปเดตข่าว');
+    }
+});
+
+// เส้นทางสำหรับการเพิ่มกิจกรรมใหม่
+app.post('/admin/add-event', isnotAdmin, async (req, res) => {
+    try {
+        const { title, date } = req.body;
+        const query = 'INSERT INTO events (title, date) VALUES ($1, $2)';
+        await dbConnection.query(query, [title, date]);
+        return res.redirect('/admin/news');
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการเพิ่มกิจกรรม:', error);
+        return res.status(500).send('เกิดข้อผิดพลาดในการเพิ่มกิจกรรม');
+    }
+});
+
+// เส้นทางสำหรับการลบกิจกรรม
+app.post('/admin/delete-event/:id', isnotAdmin, async (req, res) => {
+    try {
+        const query = 'DELETE FROM events WHERE id = $1';
+        await dbConnection.query(query, [req.params.id]);
+        return res.redirect('/admin/news');
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการลบกิจกรรม:', error);
+        return res.status(500).send('เกิดข้อผิดพลาดในการลบกิจกรรม');
+    }
+});
+
+// เส้นทางสำหรับหน้าแก้ไขกิจกรรม
+app.get('/admin/edit-event/:id', isnotAdmin, async (req, res) => {
+    try {
+        const query = 'SELECT * FROM events WHERE id = $1';
+        const result = await dbConnection.query(query, [req.params.id]);
+        const event = result.rows[0];
+        return res.render('edit_event', { event });
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการโหลดกิจกรรมสำหรับแก้ไข:', error);
+        return res.status(500).send('เกิดข้อผิดพลาดในการโหลดกิจกรรมสำหรับแก้ไข');
+    }
+});
+
+// เส้นทางสำหรับการอัปเดตกิจกรรม
+app.post('/admin/update-event/:id', isnotAdmin, async (req, res) => {
+    try {
+        const { title, date } = req.body;
+        const query = 'UPDATE events SET title = $1, date = $2 WHERE id = $3';
+        await dbConnection.query(query, [title, date, req.params.id]);
+        return res.redirect('/admin/news');
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการอัปเดตกิจกรรม:', error);
+        return res.status(500).send('เกิดข้อผิดพลาดในการอัปเดตกิจกรรม');
     }
 });
 
