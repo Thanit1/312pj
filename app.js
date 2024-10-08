@@ -225,10 +225,10 @@ app.post('/login', async (req, res) => {
         req.session.user = user;
         req.session.id = user.number;
         console.log('Login successful. Session:', req.session);
-        return res.redirect('/index');
+        return res.redirect('/index',{user: req.session.user});
     } catch (err) {
         console.error('เกิดข้อผิดพลาดในการตรวจสอบข้อมูลผู้ใช้:', err);
-        return res.render('login', { error: 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูลผู้ใช้', success: null });
+        return res.render('login', { error: 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูลผู้ใช้', success: null , user: null});
     }
 });
 // ... existing code ...
@@ -900,13 +900,18 @@ app.get('/admin/edit-news/:id', isnotAdmin, async (req, res) => {
 // เส้นทางสำหรับหน้าจัดการข่าว
 app.get('/admin/news', isnotAdmin, async (req, res) => {
     try {
-        const query = 'SELECT * FROM news ORDER BY created_at DESC';
-        const result = await dbConnection.query(query);
-        const news = result.rows;
-        res.render('admin_news', { news });
+        const newsQuery = 'SELECT * FROM news ORDER BY created_at DESC';
+        const newsResult = await dbConnection.query(newsQuery);
+        const news = newsResult.rows;
+
+        const eventsQuery = 'SELECT * FROM events ORDER BY date ASC';
+        const eventsResult = await dbConnection.query(eventsQuery);
+        const events = eventsResult.rows;
+
+        res.render('admin_news', { news, events });  // ส่งทั้ง news และ events ไปยังเทมเพลต
     } catch (error) {
-        console.error(error);
-        res.status(500).send('เกิดข้อผิดพลาดในการโหลดข่าว');
+        console.error('เกิดข้อผิดพลาดในการโหลดข้อมูล:', error);
+        res.status(500).send('เกิดข้อผิดพลาดในการโหลดหน้า');
     }
 });
 
