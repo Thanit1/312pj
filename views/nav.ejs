@@ -12,14 +12,15 @@
                 <li class="nav-item">
                     <a class="nav-link <%= currentPage === 'forum' ? 'active' : '' %>" href="/forum">กระทู้</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/index">ขอเข้าใช้ห้อง</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/locker">ขอใช้ตู้เก็บของ</a>
+                </li>
                 <% if (user) { %>
                     
-                    <li class="nav-item">
-                        <a class="nav-link" href="/index">ขอเข้าใช้ห้อง</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/locker">ขอใช้ตู้เก็บของ</a>
-                    </li>
+                  
                     
                     <li class="nav-item">
                         <a class="nav-link" href="/auth/logout">ออกจากระบบ</a>
