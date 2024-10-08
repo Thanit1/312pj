@@ -88,11 +88,11 @@ app.get('/', isnotlogin, async (req, res) => {
         res.status(500).send('เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์');
     }
 });
-app.get('/resgister', islogin, (req, res) => {
-    res.render('resgister', { error: null, success: null });
+app.get('/register', islogin, (req, res) => {
+    res.render('register', { error: null, success: null });
 });
 
-app.post('/resgister', async (req, res) => {
+app.post('/register', async (req, res) => {
     const { number, firstname, lastname, email, password } = req.body;
     
     try {
@@ -101,7 +101,7 @@ app.post('/resgister', async (req, res) => {
         const checkResult = await dbConnection.query(checkQuery, [number]);
         
         if (checkResult.rows.length > 0) {
-            return res.render('resgister', { error: 'รหัสนักศึกษานี้มีอยู่ในระบบแล้ว กรุณาใช้รหัสอื่น' });
+            return res.render('register', { error: 'รหัสนักศึกษานี้มีอยู่ในระบบแล้ว กรุณาใช้รหัสอื่น' });
         }
         
         // ตรวจสอบ number ในไฟล์ Excel ทุกไฟล์ในโฟลเดอร์ datauser
@@ -166,7 +166,7 @@ app.post('/resgister', async (req, res) => {
         res.render('login', { success: 'สมัครสมาชิกสำเร็จ กรุณายืนยันอีเมลของคุณ' });
     } catch (error) {
         console.error('เกิดข้อผิดพลาดในการสมัครสมาชิก:', error);
-        res.render('resgister', { error: 'เกิดข้อผิดพลาดในการสมัครสมาชิก' });
+        res.render('register', { error: 'เกิดข้อผิดพลาดในการสมัครสมาชิก' });
     }
 });
 
@@ -421,9 +421,31 @@ app.get('/locker', isnotlogin, (req, res) => {
 // ... existing code ...
 
 //ระบบแอดมิน
-app.get('/adminlogin', (req, res) => {
+
+function isAdmin(req, res, next) {
+    if (req.session.admin) {
+        res.redirect('/adminindex')
+        
+    }
+    next();
+}
+
+function isnotAdmin(req, res, next) {
+    if (!req.session.admin) {
+        res.redirect('/adminlogin');
+        
+    } 
+    next();
+}
+
+app.get('/admin', isAdmin, (req, res) => {
+    res.render('adminlogin', {error: null, success: null})
+})
+
+app.get('/adminlogin', isAdmin, (req, res) => {
     res.render('adminlogin', { error: null, success: null });
 });
+
 app.post('/adminlogin', async (req, res) => {
     const { username, password } = req.body;
 
@@ -481,27 +503,23 @@ app.post('/adminregister', async (req, res) => {
     }
 });
 
-app.get('/adminindex', async (req, res) => {
+app.get('/adminindex', isnotAdmin, async (req, res) => {
     try {
         const query = `
-            SELECT r.user_id, r.access_code as code, r.request_time as created_at,
-            CASE WHEN c.usage_time IS NOT NULL THEN true ELSE false END as is_used,
-            c.usage_time as used_at
-            FROM room_requests r
-            LEFT JOIN code_usage_logs c ON r.access_code = c.access_code
-            ORDER BY r.request_time DESC
+            SELECT u.id, u.number, u.firstname, u.lastname, u.email
+            FROM users u
+            ORDER BY u.id ASC
         `;
         const result = await dbConnection.query(query);
-        const code_usage_logs = result.rows;
-        
-        res.render('adminindex', { code_usage_logs });
+        const users = result.rows;
+        res.render('adminindex', { users });
     } catch (error) {
-        console.error('เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกการใช้งานรหัส:', error);
-        res.render('adminindex', { error: 'เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกการใช้งานรหัส', code_usage_logs: [] });
+        console.error('เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้:', error);
+        res.render('adminindex', { error: 'เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้', users: [] });
     }
 });
 
-app.get('/adminall-logs', async (req, res) => {
+app.get('/adminall-logs', isnotAdmin, async (req, res) => {
     try {
         const query = `
             SELECT c.id, c.user_id, u.firstname || ' ' || u.lastname AS full_name, c.access_code, c.usage_time

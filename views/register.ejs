@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,17 +7,32 @@
     <!-- เพิ่ม Bootstrap CSS และ CSS สำหรับตกแต่งเพิ่มลูกเล่น -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/custom.css" rel="stylesheet">
+    <style>
+        .form-control:focus {
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            transition: all 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+    </style>
 </head>
 <body class="bg-light">
     <div class="container mt-5">
         <div class="row justify-content-center">
             <div class="col-md-6">
-                <div class="card shadow">
+                <div class="card shadow-lg">
                     <div class="card-header bg-primary text-white">
                         <h3 class="text-center mb-0">สมัครสมาชิก</h3>
                     </div>
                     <div class="card-body">
-                        <form action="/resgister" method="post">
+                        <form action="/register" method="post">
                             <div class="mb-3">
                                 <input type="text" class="form-control" name="number" placeholder="รหัสนักศึกษา (ตัวอย่าง: 12345678900-6)" required>
                             </div>
@@ -29,12 +44,13 @@
                             </div>
                             <div class="mb-3">
                                 <input type="email" class="form-control" name="email" placeholder="อีเมล" required>
+                                <small class="form-text text-muted">กรุณาใช้อีเมลที่ใช้งานได้จริง เนื่องจากจะมีการส่งลิงก์ยืนยันไปยังอีเมลของคุณ</small>
                             </div>
                             <div class="mb-3">
                                 <input type="password" class="form-control" name="password" placeholder="รหัสผ่าน" required>
                             </div>
                             <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">สมัครสมาชิก</button>
+                                <button type="submit" class="btn btn-primary btn-lg">สมัครสมาชิก</button>
                             </div>
                         </form>
                         <% if (error) { %>
@@ -44,6 +60,9 @@
                         <% } %>
                         <div class="text-center mt-3">
                             <a href="/login" class="btn btn-link">กลับไปยังหน้าเข้าสู่ระบบ</a>
+                        </div>
+                        <div class="alert alert-info mt-3" role="alert">
+                            หากไม่พบชื่อของคุณในระบบ กรุณาติดต่อผู้ดูแลระบบเพื่อเพิ่มข้อมูลของคุณ
                         </div>
                     </div>
                 </div>
