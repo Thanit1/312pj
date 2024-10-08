@@ -225,7 +225,7 @@ app.post('/login', async (req, res) => {
         req.session.user = user;
         req.session.id = user.number;
         console.log('Login successful. Session:', req.session);
-        return res.redirect('/index',{user: req.session.user});
+        return res.redirect('/index');
     } catch (err) {
         console.error('เกิดข้อผิดพลาดในการตรวจสอบข้อมูลผู้ใช้:', err);
         return res.render('login', { error: 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูลผู้ใช้', success: null , user: null});
