@@ -3,7 +3,7 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const multer = require('multer');
-
+const dbConnection = require('./db');
 const indexRoutes = require('./routes/index');
 const authRoutes = require('./routes/auth');
 const forumRoutes = require('./routes/forum');
