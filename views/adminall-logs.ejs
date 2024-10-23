@@ -80,13 +80,25 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <% all_logs.sort((a, b) => a.id - b.id).forEach(log => { %>
+                    <% 
+                    all_logs.sort((a, b) => b.id - a.id).forEach(log => { 
+                        const usageDate = new Date(log.usage_time);
+                        const formattedDate = usageDate.toLocaleString('th-TH', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false
+                        });
+                    %>
                         <tr>
                             <td><%= log.id %></td>
                             <td><%= log.user_id %></td>
                             <td><%= log.full_name %></td>
                             <td><%= log.access_code %></td>
-                            <td><%= new Date(log.usage_time).toLocaleString('th-TH') %></td>
+                            <td><%= formattedDate %></td>
                         </tr>
                     <% }) %>
                 </tbody>
