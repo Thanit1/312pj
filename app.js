@@ -39,14 +39,23 @@ app.set('view engine', 'ejs');
 app.post('/verify-code', async (req, res) => {
     const { access_code } = req.body;
     try {
+        // สร้างวันที่และเวลาปัจจุบันในรูปแบบที่ PostgreSQL ยอมรับ
+        const thaiCurrentTime = new Date().toLocaleString('en-US', { 
+            timeZone: 'Asia/Bangkok',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        }).replace(/(\d+)\/(\d+)\/(\d+),/, '$3-$1-$2');
         
-        const thaiCurrentTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' });
-
         const query = 'SELECT * FROM room_requests WHERE access_code = $1 AND is_used = FALSE';
         const result = await dbConnection.query(query, [access_code]);
 
         if (result.rows.length > 0) {
-            const insertUsageQuery = 'INSERT INTO code_usage_logs (user_id, access_code, usage_time) VALUES ($1, $2, $3)';
+            const insertUsageQuery = 'INSERT INTO code_usage_logs (user_id, access_code, usage_time) VALUES ($1, $2, $3::timestamp)';
             await dbConnection.query(insertUsageQuery, [result.rows[0].user_id, access_code, thaiCurrentTime]);
 
             const updateQuery = 'UPDATE room_requests SET is_used = TRUE WHERE access_code = $1';
