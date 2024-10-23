@@ -39,9 +39,9 @@ app.set('view engine', 'ejs');
 app.post('/verify-code', async (req, res) => {
     const { access_code } = req.body;
     try {
-        const currentTime = new Date();
-        const thaiCurrentTime = new Date(currentTime.toLocaleString('th-th', { timeZone: 'Asia/Bangkok' }));
         
+        const thaiCurrentTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' });
+
         const query = 'SELECT * FROM room_requests WHERE access_code = $1 AND is_used = FALSE';
         const result = await dbConnection.query(query, [access_code]);
 
