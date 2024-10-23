@@ -80,7 +80,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <% all_logs.forEach(log => { %>
+                    <% all_logs.sort((a, b) => a.id - b.id).forEach(log => { %>
                         <tr>
                             <td><%= log.id %></td>
                             <td><%= log.user_id %></td>
