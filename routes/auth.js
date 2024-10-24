@@ -19,8 +19,8 @@ router.get('/login', (req, res) => {
     res.render('login', { 
         error: null, 
         success: null, 
-        user: null,  // เพิ่มบรรทัดนี้
-        currentPage: 'login'  // เพิ่มบรรทัดนี้ถ้าจำเป็น
+        user: req.session.user || null,  // แก้ไขบรรทัดนี้
+        currentPage: 'login'  // แก้ไขบรรทัดนี้ถ้าจำเป็น
     });
 });
 
@@ -34,8 +34,8 @@ router.post('/login', async (req, res) => {
             return res.render('login', { 
                 error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 
                 success: null,
-                user: null,  // เพิ่มบรรทัดนี้
-                currentPage: 'login'  // เพิ่มบรรทัดนี้ถ้าจำเป็น
+                user: req.session.user || null,  // แก้ไขบรรทัดนี้
+                currentPage: 'login'  // แก้ไขบรรทัดนี้ถ้าจำเป็น
             });
         }
         const user = result.rows[0];
@@ -44,8 +44,8 @@ router.post('/login', async (req, res) => {
             return res.render('login', { 
                 error: 'กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ', 
                 success: null,
-                user: null,  // เพิ่มบรรทัดนี้
-                currentPage: 'login'  // เพิ่มบรรทัดนี้ถ้าจำเป็น
+                user: req.session.user || null,  // แก้ไขบรรทัดนี้
+                currentPage: 'login'  // แก้ไขบรรทัดนี้ถ้าจำเป็น
             });
         }
         const isMatch = await bcrypt.compare(password, user.password);
@@ -53,8 +53,8 @@ router.post('/login', async (req, res) => {
             return res.render('login', { 
                 error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 
                 success: null,
-                user: null,  // เพิ่มบรรทัดนี้
-                currentPage: 'login'  // เพิ่มบรรทัดนี้ถ้าจำเป็น
+                user: req.session.user || null,  // แก้ไขบรรทัดนี้
+                currentPage: 'login'  // แก้ไขบรรทัดนี้ถ้าจำเป็น
             });
         }
         req.session.user = user;
@@ -63,12 +63,12 @@ router.post('/login', async (req, res) => {
         return res.redirect('/index');
     } catch (err) {
         console.error('เกิดข้อผิดพลาดในการตรวจสอบข้อมูลผู้ใช้:', err);
-        return res.render('login', { error: 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูลผู้ใช้', success: null , user: null});
+        return res.render('login', { error: 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูลผู้ใช้', success: null , user: req.session.user || null});
     }
 });
 
 router.get('/register', islogin, (req, res) => {
-    res.render('register', { error: null, success: null , user: null});
+    res.render('register', { error: null, success: null , user: req.session.user || null});
 });
 
 router.post('/register', async (req, res) => {
@@ -136,10 +136,10 @@ router.post('/register', async (req, res) => {
             console.log('อีเมลถูกส่ง:', info.response);
         });
 
-        res.render('login', { success: 'สมัครสมาชิกสำเร็จ กรุณายืนยันอีเมลของคุณ' });
+        res.render('login', { success: 'สมัครสมาชิกสำเร็จ กรุณายืนยันอีเมลของคุณ', user: req.session.user || null });
     } catch (error) {
         console.error('เกิดข้อผิดพลาดในการสมัครสมาชิก:', error);
-        res.render('register', { error: 'เกิดข้อผิดพลาดในการสมัครสมาชิก' });
+        res.render('register', { error: 'เกิดข้อผิดพลาดในการสมัครสมาชิก', user: req.session.user || null });
     }
 });
 
@@ -150,14 +150,14 @@ router.get('/verify-email', async (req, res) => {
     const result = await dbConnection.query(updateQuery, [token]);
 
     if (result.rowCount > 0) {
-        res.render('login', { success: 'อีเมลของคุณได้รับการยืนยันแล้ว.....' });
+        res.render('login', { success: 'อีเมลของคุณได้รับการยืนยันแล้ว.....' , user: req.session.user || null});
     } else {
         res.send('เกิดข้อผิดพลาดในการยืนยันอีเมล');
     }
 });
 
 router.get('/reset-password', (req, res) => {
-    res.render('reset-password', { error: null, success: null });
+    res.render('reset-password', { error: null, success: null , user: req.session.user || null});
 });
 
 router.post('/reset-password', async (req, res) => {
@@ -168,7 +168,7 @@ router.post('/reset-password', async (req, res) => {
         const result = await dbConnection.query(query, [email]);
 
         if (result.rows.length === 0) {
-            return res.render('reset-password', { error: 'ไม่พบอีเมลนี้ในระบบ', success: null });
+            return res.render('reset-password', { error: 'ไม่พบอีเมลนี้ในระบบ', success: null , user: req.session.user || null});
         }
 
         const token = crypto.randomBytes(20).toString('hex');
@@ -187,7 +187,7 @@ router.post('/reset-password', async (req, res) => {
             from: 'thanit.sn02@gmail.com',
             to: email,
             subject: 'รีเซ็ตรหัสผ่าน',
-            text: `กรุณาคลิกที่ลิงก์นี้เพื่อตั้งรหัสผ่านใหม่: http://172.25.11.151:5900/auth/new-password?token=${token}`
+            text: `กรุณาคลิกที่ลิงก์นี้เพื่อตั้งรห���สผ่านใหม่: http://172.25.11.151:5900/auth/new-password?token=${token}`
         };
 
         transporter.sendMail(mailOptions, (error, info) => {
@@ -218,13 +218,13 @@ router.post('/new-password', async (req, res) => {
         const result = await dbConnection.query(updateQuery, [hashedPassword, token]);
 
         if (result.rowCount > 0) {
-            res.render('login', { success: 'รหัสผ่านของคุณถูกตั้งใหม่เรียบร้อยแล้ว', error: null });
+            res.render('login', { success: 'รหัสผ่านของคุณถูกตั้งใหม่เรียบร้อยแล้ว', error: null , user: req.session.user || null});
         } else {
-            res.render('new-password', { token, error: 'เกิดข้อผิดพลาดในการตั้งรหัสผ่านใหม่', success: null });
+            res.render('new-password', { token, error: 'เกิดข้อผิดพลาดในการตั้งรหัสผ่านใหม่', success: null , user: req.session.user || null});
         }
     } catch (error) {
         console.error('เกิดข้อผิดพลาดในการตั้งรหัสผ่านใหม่:', error);
-        res.render('new-password', { token, error: 'เกิดข้อผิดพลาดในการตั้งรหัสผ่านใหม่', success: null });
+        res.render('new-password', { token, error: 'เกิดข้อผิดพลาดในการตั้งรหัสผ่านใหม่', success: null , user: req.session.user || null});
     }
 });
 
