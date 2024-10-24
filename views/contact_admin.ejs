@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ติดต่อ Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .contact-info {
+            margin-top: 20px;
+        }
+        .contact-info p {
+            margin-bottom: 10px;
+        }
+        .fb-link {
+            color: #1877f2;
+            text-decoration: none;
+        }
+        .fb-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <%- include('nav', { user: user, currentPage: 'contact' }) %>
+    
+    <div class="container">
+        <h1>ติดต่อ Admin</h1>
+        <div class="contact-info">
+            <p>หากคุณมีปัญหาหรือข้อสงสัยเพิ่มเติม สามารถติดต่อ Admin ได้ทาง Facebook:</p>
+            <p>
+                <strong>Facebook:</strong> 
+                <a href="https://www.facebook.com/thanit.sangjinda" class="fb-link" target="_blank">ฐานิต แสงจินดา</a>
+            </p>
+            <p>เรายินดีให้ความช่วยเหลือและตอบคำถามของคุณโดยเร็วที่สุด</p>
+        </div>
+    </div>
+</body>
+</html>

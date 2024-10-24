@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth');
 const forumRoutes = require('./routes/forum');
 const newsRoutes = require('./routes/news');
 const adminRoutes = require('./routes/admin');
+const reportRoutes = require('./routes/report'); // เพิ่มบรรทัดนี้
 
 const app = express();
 const port = 3000;
@@ -75,6 +76,7 @@ app.use('/auth', authRoutes);
 app.use('/forum', forumRoutes);
 app.use('/news', newsRoutes);
 app.use('/admin', adminRoutes);
+app.use('/report', reportRoutes); // เพิ่มบรรทัดนี้
 
 
 app.listen(port, () => {
