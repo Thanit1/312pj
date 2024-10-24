@@ -5,7 +5,10 @@ const router = express.Router();
 
 // เพิ่มเส้นทางสำหรับหน้าติดต่อ admin
 router.get('/', (req, res) => {
-    res.render('contact_admin');
+    res.render('contact_admin', { 
+        user: req.session.user || null,
+        currentPage: 'contact'
+    });
 });
 
 // ... existing code ...
