@@ -8,47 +8,65 @@
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            font-family: 'Kanit', sans-serif; /* ปรับเปลี่ยนฟอนต์ให้เป็น Kanit */
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4; /* ปรับเปลี่ยนสีพื้นหลัง */
+          body {
+            font-family: 'Kanit', sans-serif;
+            background-color: #f0f2f5;
+            background-image: url('https://example.com/path/to/your/background-image.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
-        .container {
-            max-width: 800px;
-            margin: 20px auto;
-            background: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            /* เพิ่มสไตล์ใหม่สำหรับ container */
-            border: 1px solid #ddd; /* เพิ่มเส้นขอบ */
-            margin-top: 50px; /* เพิ่มระยะห่างด้านบน */
+        .navbar {
+            background-color: rgba(59, 89, 152, 0.9) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0,0,0,.2);
         }
-        h1 {
-            color: #333;
-            /* ปรับเปลี่ยนสีหัวข้อ */
-            font-size: 24px; /* ปรับขนาดฟอนต์ */
-            margin-bottom: 20px; /* เพิ่มระยะห่างด้านล่าง */
+        .navbar-brand, .nav-link {
+            color: #ffffff !important;
+            transition: all 0.3s ease;
         }
-        .contact-info {
-            margin-top: 20px;
-            /* ปรับเปลี่ยนระยะห่างด้านบน */
+        .navbar-brand:hover, .nav-link:hover {
+            color: #ffd700 !important;
+            transform: translateY(-2px);
         }
-        .contact-info p {
-            margin-bottom: 10px;
-            /* ปรับเปลี่ยนระยะห่างด้านล่าง */
+        .card {
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.15);
+            backdrop-filter: blur(5px);
+            background-color: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
         }
-        .fb-link {
-            color: #1877f2;
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .btn-primary {
+            background-color: #3b5998;
+            border: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(59, 89, 152, 0.2);
+        }
+        .btn-primary:hover {
+            background-color: #2d4373;
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 8px rgba(45, 67, 115, 0.3);
+        }
+        .form-control {
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            box-shadow: 0 0 0 0.2rem rgba(59, 89, 152, 0.25);
+            border-color: #3b5998;
+        }
+        .btn-link {
+            color: #3b5998;
+            transition: all 0.3s ease;
+        }
+        .btn-link:hover {
+            color: #2d4373;
             text-decoration: none;
-            /* ปรับเปลี่ยนสีลิงค์ */
-            font-weight: bold; /* ทำให้ลิงค์หนา */
-        }
-        .fb-link:hover {
-            text-decoration: underline;
-            /* ปรับเปลี่ยนลักษณะลิงค์เมื่อเลื่อนเมาส์ผ่าน */
+            transform: translateY(-2px);
         }
     </style>
 </head>
