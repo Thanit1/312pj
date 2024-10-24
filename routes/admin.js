@@ -121,7 +121,7 @@ router.get('/all-logs', isnotAdmin, async (req, res) => {
         res.render('adminall-logs', { all_logs });
     } catch (error) {
         console.error('เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกการใช้งานรหัส:', error);
-        res.render('adminall-logs', { error: 'เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกการใช้งานรหัส', all_logs: [] });
+        res.render('adminall-logs', { error: 'เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกการใช้ง��นรหัส', all_logs: [] });
     }
 });
 
@@ -248,6 +248,19 @@ router.post('/update-event/:id', isnotAdmin, async (req, res) => {
 router.get('/logout', (req, res) => {
     req.session.destroy();
     res.redirect('/admin/login');
+});
+
+// เพิ่มเส้นทางสำหรับการลบผู้ใช้งาน
+router.post('/delete-user/:id', isnotAdmin, async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const query = 'DELETE FROM users WHERE id = $1';
+        await dbConnection.query(query, [userId]);
+        res.redirect('/admin/index');
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการลบผู้ใช้งาน:', error);
+        res.status(500).send('เกิดข้อผิดพลาดในการลบผู้ใช้งาน');
+    }
 });
 
 module.exports = router;
