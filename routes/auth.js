@@ -126,7 +126,7 @@ router.post('/register', async (req, res) => {
             from: 'thanit.sn02@gmail.com',
             to: email,
             subject: 'ยืนยันการสมัครสมาชิก',
-            text: `ขอบคุณที่สมัครสมาชิก กรุณายืนยันอีเมลของคุณโดยคลิกที่ลิงก์นี้: http://172.25.11.151:5900/auth/verify-email?token=${token}`
+            text: `ขอบคุณที่สมัครสมาชิก กรุณายืนยันอีเมลของคุณโดยคลิกที่ลิงก์นี้: http://172.25.11.195:5900/auth/verify-email?token=${token}`
         };
 
         transporter.sendMail(mailOptions, (error, info) => {
@@ -187,7 +187,7 @@ router.post('/reset-password', async (req, res) => {
             from: 'thanit.sn02@gmail.com',
             to: email,
             subject: 'รีเซ็ตรหัสผ่าน',
-            text: `กรุณาคลิกที่ลิงก์นี้เพื่อตั้งรห���สผ่านใหม่: http://172.25.11.151:5900/auth/new-password?token=${token}`
+            text: `กรุณาคลิกที่ลิงก์นี้เพื่อตั้งรหัสผ่านใหม่: http://172.25.11.195:5900/auth/new-password?token=${token}`
         };
 
         transporter.sendMail(mailOptions, (error, info) => {
